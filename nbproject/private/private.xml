@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project-private xmlns="http://www.netbeans.org/ns/project-private/1">
+    <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
+    <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
+        <group>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/src/Vista/SolicitudView.fxml</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/src/Vista/ReporteView.fxml</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/src/Vista/LoginView.fxml</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/src/Vista/MenuPrincipalView.fxml</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/src/Controlador/TecnicoController.java</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/src/Modelo/Especialidad.java</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/src/Vista/AsignacionView.fxml</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/src/DAO/ClienteDAO.java</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/src/Vista/TecnicoView.fxml</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/src/Modelo/Cliente.java</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/src/Controlador/HistorialController.java</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/src/Main/Main.java</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/src/Vista/styles.css</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/src/Controlador/Controller.java</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/src/Controlador/AsignacionController.java</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/src/Vista/ClienteView.fxml</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/src/Vista/HistorialView.fxml</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/src/Modelo/Solicitud.java</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/src/Controlador/ReporteController.java</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/src/Vista/FX.fxml</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/src/Controlador/ClienteController.java</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/src/Controlador/SolicitudController.java</file>
+        </group>
+    </open-files>
+</project-private>

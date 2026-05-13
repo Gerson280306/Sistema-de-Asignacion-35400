@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.geometry.*?>
+
+<!--
+    AsignacionView.fxml — MÓDULO UNIFICADO
+    Asignación automática (R27-R34) + Gestión de asignaciones (R35-R40)
+    Controlador: Controlador.AsignacionController
+-->
+<VBox xmlns="http://javafx.com/javafx/17"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="Controlador.AsignacionController"
+      spacing="12"
+      style="-fx-background-color: #F0F4F8;"
+      VBox.vgrow="ALWAYS">
+
+    <!-- ENCABEZADO con contadores -->
+    <HBox style="-fx-background-color: #1565C0; -fx-background-radius: 10;
+                 -fx-padding: 14 20 14 20;"
+          spacing="16" alignment="CENTER_LEFT">
+        <VBox spacing="3" HBox.hgrow="ALWAYS">
+            <Label text="Asignación y Gestión"
+                   style="-fx-text-fill: white; -fx-font-size: 15px; -fx-font-weight: bold;"/>
+            <Label text="Asigna técnicos a solicitudes y gestiona el estado de cada atención."
+                   style="-fx-text-fill: #A8C8F0; -fx-font-size: 11px;" wrapText="true"/>
+        </VBox>
+        <VBox alignment="CENTER"
+              style="-fx-background-color: #1A3F60; -fx-background-radius: 8; -fx-padding: 8 16 8 16;">
+            <Label fx:id="lblPendientes" text="0"
+                   style="-fx-text-fill: white; -fx-font-size: 22px; -fx-font-weight: bold;"/>
+            <Label text="Pendientes" style="-fx-text-fill: #A8C8F0; -fx-font-size: 11px;"/>
+        </VBox>
+        <VBox alignment="CENTER"
+              style="-fx-background-color: #1A3F60; -fx-background-radius: 8; -fx-padding: 8 16 8 16;">
+            <Label fx:id="lblAsignadas" text="0"
+                   style="-fx-text-fill: white; -fx-font-size: 22px; -fx-font-weight: bold;"/>
+            <Label text="Asignadas" style="-fx-text-fill: #A8C8F0; -fx-font-size: 11px;"/>
+        </VBox>
+        <VBox alignment="CENTER"
+              style="-fx-background-color: #1A3F60; -fx-background-radius: 8; -fx-padding: 8 16 8 16;">
+            <Label fx:id="lblTecnicosLibres" text="0"
+                   style="-fx-text-fill: white; -fx-font-size: 22px; -fx-font-weight: bold;"/>
+            <Label text="Técnicos libres" style="-fx-text-fill: #A8C8F0; -fx-font-size: 11px;"/>
+        </VBox>
+    </HBox>
+
+    <!-- CUERPO PRINCIPAL -->
+    <HBox spacing="12" VBox.vgrow="ALWAYS">
+
+        <!-- IZQUIERDA: tabla única -->
+        <VBox spacing="10" HBox.hgrow="ALWAYS">
+
+            <!-- Barra de filtros -->
+            <HBox spacing="10" alignment="CENTER_LEFT"
+                  style="-fx-background-color: white; -fx-padding: 12 14 12 14;
+                         -fx-background-radius: 10;">
+
+                <TextField fx:id="txtBuscar"
+                           promptText="🔍  Buscar por cliente o técnico..."
+                           prefWidth="200" styleClass="text-field"
+                           onKeyReleased="#buscar"/>
+
+                <DatePicker fx:id="dpFiltroFecha"
+                            promptText="Filtrar por fecha"
+                            prefWidth="150"
+                            onAction="#buscar"/>
+
+                <Button text="Limpiar" styleClass="btn-secondary"
+                        onAction="#limpiarFiltros"
+                        style="-fx-font-size: 11px; -fx-padding: 6 10 6 10;"/>
+
+                <Pane HBox.hgrow="ALWAYS"/>
+                <Button fx:id="btnAsignarTodos" text="⚡ Asignar pendientes"
+                        styleClass="btn-primary" onAction="#asignarTodos"/>
+            </HBox>
+
+            <!-- Tabla única -->
+            <VBox VBox.vgrow="ALWAYS"
+                  style="-fx-background-color: white; -fx-background-radius: 10; -fx-padding: 10;">
+
+                <TableView fx:id="tblSolicitudes" VBox.vgrow="ALWAYS"
+                           styleClass="table-view"
+                           onMouseClicked="#seleccionarFila">
+                    <columns>
+                        <TableColumn fx:id="colId"        text="ID"         prefWidth="45"  style="-fx-alignment: CENTER;"/>
+                        <TableColumn fx:id="colCliente"   text="Cliente"    prefWidth="140" style="-fx-alignment: CENTER;"/>
+                        <TableColumn fx:id="colFecha"     text="Fecha"      prefWidth="95"  style="-fx-alignment: CENTER;"/>
+                        <TableColumn fx:id="colHora"      text="Hora"       prefWidth="65"  style="-fx-alignment: CENTER;"/>
+                        <TableColumn fx:id="colDireccion" text="Dirección"  prefWidth="175" style="-fx-alignment: CENTER;"/>
+                        <TableColumn fx:id="colTipo"      text="Tipo"       prefWidth="100" style="-fx-alignment: CENTER;"/>
+                        <TableColumn fx:id="colTecnico"   text="Técnico"    prefWidth="130" style="-fx-alignment: CENTER;"/>
+                        <TableColumn fx:id="colEstado"    text="Estado"     prefWidth="110" style="-fx-alignment: CENTER;"/>
+                        <TableColumn fx:id="colPrioridad" text="Prioridad"  prefWidth="85"  style="-fx-alignment: CENTER;"/>
+                    </columns>
+                    <placeholder>
+                        <Label text="Sin solicitudes"
+                               style="-fx-text-fill: #A0ADB8; -fx-font-size: 13px;"/>
+                    </placeholder>
+                </TableView>
+
+                <HBox style="-fx-padding: 8 4 0 4;">
+                    <Label fx:id="lblContador" text="0 solicitudes"
+                           style="-fx-text-fill: #5A6A7A; -fx-font-size: 12px;"/>
+                </HBox>
+            </VBox>
+        </VBox>
+
+        <!-- DERECHA: panel de acción unificado -->
+        <ScrollPane prefWidth="370" fitToWidth="true"
+                    style="-fx-background-color: transparent; -fx-background: transparent; -fx-border-color: transparent;"
+                    hbarPolicy="NEVER" vbarPolicy="AS_NEEDED">
+        <VBox prefWidth="350" spacing="10" style="-fx-padding: 0 4 4 0;">
+
+            <!-- Sección: Asignar técnico -->
+            <VBox style="-fx-background-color: white; -fx-background-radius: 10;
+                         -fx-padding: 18;" spacing="12">
+
+                <Label text="Asignar técnico"
+                       style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #1A2332;"/>
+
+                <!-- Info solicitud seleccionada -->
+                <VBox style="-fx-background-color: #F5F8FC; -fx-background-radius: 8;
+                             -fx-padding: 10;" spacing="4">
+                    <Label text="SOLICITUD" styleClass="label-field"/>
+                    <Label fx:id="lblSolicitudSeleccionada" text="Selecciona una fila de la tabla"
+                           style="-fx-text-fill: #5A6A7A; -fx-font-size: 12px;" wrapText="true"/>
+                    <Label fx:id="lblDireccionSolicitud" text=""
+                           style="-fx-text-fill: #1565C0; -fx-font-size: 12px;" wrapText="true"/>
+                    <Label fx:id="lblFechaSolicitud" text=""
+                           style="-fx-text-fill: #1565C0; -fx-font-size: 12px;"/>
+                    <Label fx:id="lblHoraSolicitud" text=""
+                           style="-fx-text-fill: #1565C0; -fx-font-size: 12px; -fx-font-weight: bold;"/>
+                </VBox>
+
+                <!-- Técnico sugerido -->
+                <VBox style="-fx-background-color: #E8F5E9; -fx-background-radius: 8;
+                             -fx-padding: 10;" spacing="4">
+                    <Label text="TÉCNICO SUGERIDO" styleClass="label-field"/>
+                    <Label fx:id="lblTecnicoSugerido" text="—"
+                           style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #1A2332;"/>
+                    <Label fx:id="lblRazonSugerencia" text=""
+                           style="-fx-text-fill: #5A6A7A; -fx-font-size: 11px;" wrapText="true"/>
+                </VBox>
+
+                <!-- Técnico manual -->
+                <VBox spacing="4">
+                    <Label text="TÉCNICO (MANUAL)" styleClass="label-field"/>
+                    <ComboBox fx:id="cmbTecnicoManual" promptText="O selecciona manualmente..."
+                              prefWidth="1000" styleClass="combo-box"/>
+                </VBox>
+
+                <!-- Notas -->
+                <VBox spacing="4">
+                    <Label text="NOTAS" styleClass="label-field"/>
+                    <TextArea fx:id="txtNotasAsignacion" promptText="Notas de la asignación..."
+                              prefRowCount="2" styleClass="text-field" wrapText="true"/>
+                </VBox>
+
+                <Button fx:id="btnAsignar" text="⚡ Confirmar asignación"
+                        maxWidth="1000" prefHeight="40"
+                        styleClass="btn-primary" disable="true"
+                        onAction="#confirmarAsignacion"/>
+
+                <Label fx:id="lblMensaje" text="" wrapText="true"
+                       style="-fx-font-size: 12px;"/>
+            </VBox>
+        </VBox>
+        </ScrollPane>
+    </HBox>
+</VBox>
