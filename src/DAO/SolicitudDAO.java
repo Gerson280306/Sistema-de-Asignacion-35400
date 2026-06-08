@@ -3,6 +3,8 @@ package DAO;
 import Conexion.ConexionDB;
 import Modelo.Solicitud;
 import java.sql.*;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,7 +27,12 @@ public class SolicitudDAO {
     /** Solicitudes cuyo estado aún puede cambiar a TERMINADO automáticamente */
     public List<Solicitud> listarParaAutoTerminar() {
         List<Solicitud> lista = new ArrayList<>();
-        String sql = "SELECT s.*, CONCAT(c.nombres,' ',c.apellidos) AS nombre_cliente, "
+        // Se usan alias explícitos para evitar conflicto entre s.estado (ENUM) y a.estado (tinyint)
+        String sql = "SELECT s.id_solicitud, s.codigo, s.id_cliente, s.id_tipo_servicio, "
+                   + "s.descripcion, s.prioridad, s.direccion_atencion, s.referencia_atencion, "
+                   + "s.fecha_registro, s.fecha_solicitada, s.horario_preferido, "
+                   + "s.estado, s.observaciones, "
+                   + "CONCAT(c.nombres,' ',c.apellidos) AS nombre_cliente, "
                    + "c.direccion AS direccion_cliente, "
                    + "ts.nombre AS nombre_tipo, "
                    + "CONCAT(IFNULL(t.nombres,''),' ',IFNULL(t.apellidos,'')) AS nombre_tecnico "
@@ -49,7 +56,11 @@ public class SolicitudDAO {
     /** Solicitudes de HOY (para el módulo de Asignación) */
     public List<Solicitud> listarPendientesHoy() {
         List<Solicitud> lista = new ArrayList<>();
-        String sql = "SELECT s.*, CONCAT(c.nombres,' ',c.apellidos) AS nombre_cliente, "
+        String sql = "SELECT s.id_solicitud, s.codigo, s.id_cliente, s.id_tipo_servicio, "
+                   + "s.descripcion, s.prioridad, s.direccion_atencion, s.referencia_atencion, "
+                   + "s.fecha_registro, s.fecha_solicitada, s.horario_preferido, "
+                   + "s.estado, s.observaciones, "
+                   + "CONCAT(c.nombres,' ',c.apellidos) AS nombre_cliente, "
                    + "c.direccion AS direccion_cliente, "
                    + "ts.nombre AS nombre_tipo, "
                    + "CONCAT(IFNULL(t.nombres,''),' ',IFNULL(t.apellidos,'')) AS nombre_tecnico "
@@ -72,7 +83,11 @@ public class SolicitudDAO {
 
     private List<Solicitud> listarConFiltro(String estado) {
         List<Solicitud> lista = new ArrayList<>();
-        String sql = "SELECT s.*, CONCAT(c.nombres,' ',c.apellidos) AS nombre_cliente, "
+        String sql = "SELECT s.id_solicitud, s.codigo, s.id_cliente, s.id_tipo_servicio, "
+                   + "s.descripcion, s.prioridad, s.direccion_atencion, s.referencia_atencion, "
+                   + "s.fecha_registro, s.fecha_solicitada, s.horario_preferido, "
+                   + "s.estado, s.observaciones, "
+                   + "CONCAT(c.nombres,' ',c.apellidos) AS nombre_cliente, "
                    + "c.direccion AS direccion_cliente, "
                    + "ts.nombre AS nombre_tipo, "
                    + "CONCAT(IFNULL(t.nombres,''),' ',IFNULL(t.apellidos,'')) AS nombre_tecnico "
@@ -95,7 +110,11 @@ public class SolicitudDAO {
 
     public List<Solicitud> buscar(String texto) {
         List<Solicitud> lista = new ArrayList<>();
-        String sql = "SELECT s.*, CONCAT(c.nombres,' ',c.apellidos) AS nombre_cliente, "
+        String sql = "SELECT s.id_solicitud, s.codigo, s.id_cliente, s.id_tipo_servicio, "
+                   + "s.descripcion, s.prioridad, s.direccion_atencion, s.referencia_atencion, "
+                   + "s.fecha_registro, s.fecha_solicitada, s.horario_preferido, "
+                   + "s.estado, s.observaciones, "
+                   + "CONCAT(c.nombres,' ',c.apellidos) AS nombre_cliente, "
                    + "c.direccion AS direccion_cliente, "
                    + "ts.nombre AS nombre_tipo, "
                    + "CONCAT(IFNULL(t.nombres,''),' ',IFNULL(t.apellidos,'')) AS nombre_tecnico "
@@ -248,5 +267,36 @@ public class SolicitudDAO {
         s.setObservaciones(rs.getString("observaciones"));
         try { s.setNombreTecnico(rs.getString("nombre_tecnico")); } catch (SQLException ignored) {}
         return s;
+    }
+
+    /**
+     * Lista las horas (horario_preferido) de solicitudes PENDIENTES
+     * en una fecha dada que aún no tienen técnico asignado.
+     * Se usa para contar cuántas solicitudes ya "reservan" un técnico en esa franja.
+     */
+    public List<LocalTime> listarHorasPendientesPorFecha(LocalDate fecha) {
+        List<LocalTime> lista = new ArrayList<>();
+        String sql = "SELECT s.horario_preferido "
+                   + "FROM tb_solicitud s "
+                   + "LEFT JOIN tb_asignacion a ON a.id_solicitud = s.id_solicitud "
+                   + "  AND a.estado_asignacion NOT IN ('CANCELADA','COMPLETADA') "
+                   + "WHERE s.fecha_solicitada = ? "
+                   + "  AND s.estado = 'PENDIENTE' "
+                   + "  AND a.id_asignacion IS NULL"; // sin técnico asignado
+        try (PreparedStatement ps = conn().prepareStatement(sql)) {
+            ps.setDate(1, java.sql.Date.valueOf(fecha));
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                String h = rs.getString("horario_preferido");
+                if (h == null) continue;
+                try {
+                    String hStr = h.length() > 5 ? h.substring(0, 5) : h;
+                    lista.add(LocalTime.parse(hStr));
+                } catch (Exception ignored) {}
+            }
+        } catch (SQLException e) {
+            System.err.println("[SolicitudDAO] listarHorasPendientesPorFecha: " + e.getMessage());
+        }
+        return lista;
     }
 }

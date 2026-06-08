@@ -142,6 +142,9 @@
                     </HBox>
                     <Label text="Horario de atención: 08:00 — 17:00"
                            style="-fx-font-size: 11px; -fx-text-fill: #A0ADB8;"/>
+                    <Label fx:id="lblDisponibilidad" text=""
+                           wrapText="true"
+                           style="-fx-font-size: 12px;"/>
                 </VBox>
 
                 <!-- Tipo -->

@@ -1,8 +1,10 @@
 package Controlador;
 
 import DAO.SolicitudDAO;
+import DAO.TecnicoDAO;
 import Modelo.Cliente;
 import Modelo.Solicitud;
+import Modelo.Tecnico;
 import Modelo.TipoServicio;
 import Conexion.ConexionDB;
 import javafx.collections.FXCollections;
@@ -13,9 +15,11 @@ import javafx.scene.control.cell.PropertyValueFactory;
 
 import java.sql.*;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class SolicitudController {
 
@@ -27,6 +31,7 @@ public class SolicitudController {
     @FXML private TableColumn<Solicitud,String>  colFecha, colHora, colCliente,
                                                   colTipo, colPrioridad, colEstado;
     @FXML private Label lblContador, lblTituloForm, lblMensaje;
+    @FXML private Label lblDisponibilidad;
 
     // ── Formulario (sin cmbEstado) ───────────────────────────
     @FXML private ComboBox<Cliente>      cmbCliente;
@@ -38,6 +43,7 @@ public class SolicitudController {
     @FXML private Button                 btnGuardar, btnCancelarSolicitud;
 
     private final SolicitudDAO dao = new SolicitudDAO();
+    private final TecnicoDAO tecnicoDAO = new TecnicoDAO();
     private Solicitud solicitudSeleccionada = null;
     private ObservableList<Solicitud> todasLasSolicitudes = FXCollections.observableArrayList();
 
@@ -111,7 +117,168 @@ public class SolicitudController {
                   && dpFechaSolicitud.getValue() != null;
         if (ok && txtHoraHH != null)
             ok = !txtHoraHH.getText().trim().isEmpty() && !txtHoraMM.getText().trim().isEmpty();
+
+        if (ok && txtHoraHH != null) {
+            // Validar hora no pasada si la fecha es hoy
+            LocalDate fecha = dpFechaSolicitud.getValue();
+            LocalTime hora  = parsearHora(txtHoraHH.getText() + ":" + txtHoraMM.getText());
+            if (fecha != null && hora != null && fecha.equals(LocalDate.now())) {
+                if (hora.isBefore(LocalTime.now())) {
+                    mostrarAviso("⚠️ La hora ingresada ya pasó. Elige una hora futura.", false);
+                    btnGuardar.setDisable(true);
+                    return;
+                }
+            }
+            // Validar disponibilidad de técnicos
+            if (fecha != null && hora != null) {
+                String aviso = verificarDisponibilidad(fecha, hora);
+                if (aviso != null) {
+                    mostrarAviso(aviso, false);
+                    btnGuardar.setDisable(true);
+                    return;
+                }
+            }
+            mostrarAviso("", true);
+        }
         btnGuardar.setDisable(!ok);
+    }
+
+    /**
+     * Verifica si hay al menos un técnico libre para la fecha/hora dada.
+     * Bloque por técnico: [hora_solicitud, hora_solicitud + 3h]
+     * Cuenta TANTO asignaciones activas COMO solicitudes PENDIENTES sin asignar
+     * (cada solicitud pendiente reservará un técnico).
+     * Retorna mensaje de error con la próxima hora disponible, o null si hay espacio.
+     */
+    private String verificarDisponibilidad(LocalDate fecha, LocalTime hora) {
+        int diaSemana = fecha.getDayOfWeek().getValue(); // 1=Lun..7=Dom
+        java.util.List<Tecnico> activos = tecnicoDAO.listarActivos();
+
+        // Bloques ocupados: técnicos ya asignados (tb_asignacion)
+        Map<Integer, List<java.time.LocalTime[]>> ocupadosPorTecnico =
+                tecnicoDAO.obtenerOcupacionPorFecha(fecha);
+
+        // Solicitudes PENDIENTES en esa fecha (aún sin técnico asignado)
+        // Cada una consume un técnico disponible en ese bloque horario
+        java.util.List<LocalTime> pendientesSinAsignar =
+                dao.listarHorasPendientesPorFecha(fecha);
+
+        // Calcular cuántos técnicos pueden atender en esa hora
+        int capacidad = 0; // técnicos disponibles para esa hora
+        for (Tecnico t : activos) {
+            // ¿Trabaja ese día?
+            boolean[] dias = tecnicoDAO.cargarDiasHorario(t.getIdTecnico());
+            if (!dias[diaSemana - 1]) continue;
+            // ¿La hora entra en su turno? (necesita al menos 2h antes del fin)
+            String[] horas = tecnicoDAO.cargarHorasHorario(t.getIdTecnico());
+            LocalTime ini = parsearHora(horas[0]);
+            LocalTime fin = parsearHora(horas[1]);
+            if (ini == null || fin == null) { ini = LocalTime.of(8,0); fin = LocalTime.of(17,0); }
+            if (hora.isBefore(ini) || hora.isAfter(fin.minusHours(2))) continue;
+            // ¿Está libre en ese bloque según tb_asignacion?
+            java.util.List<java.time.LocalTime[]> bloques =
+                    ocupadosPorTecnico.getOrDefault(t.getIdTecnico(), new java.util.ArrayList<>());
+            boolean solapado = false;
+            for (java.time.LocalTime[] b : bloques) {
+                if (hora.isBefore(b[1]) && hora.plusHours(3).isAfter(b[0])) {
+                    solapado = true; break;
+                }
+            }
+            if (!solapado) capacidad++;
+        }
+
+        // Contar cuántas solicitudes pendientes se solapan con esta hora
+        long pendientesEnBloque = pendientesSinAsignar.stream().filter(h ->
+            hora.isBefore(h.plusHours(3)) && hora.plusHours(3).isAfter(h)
+        ).count();
+
+        int libres = (int)(capacidad - pendientesEnBloque);
+
+        if (libres <= 0) {
+            String horaStr = hora.toString().substring(0, 5);
+            // Límite: la última hora válida es 17:00 (técnicos trabajan hasta las 19:00)
+            LocalTime limiteMaximo = LocalTime.of(17, 0);
+
+            // 1. Buscar hueco ANTES de la hora solicitada (desde 08:00 hacia la hora actual)
+            LocalTime huecoAntes = null;
+            LocalTime candidato = LocalTime.of(8, 0);
+            while (!candidato.isAfter(hora.minusMinutes(30))) {
+                if (verificarHoraLibre(fecha, candidato, activos,
+                        ocupadosPorTecnico, pendientesSinAsignar, diaSemana)) {
+                    huecoAntes = candidato;
+                    break;
+                }
+                candidato = candidato.plusMinutes(30);
+            }
+
+            // 2. Buscar próxima hora DESPUÉS de la solicitada (hasta el límite 15:00)
+            LocalTime proxima = null;
+            candidato = hora.plusMinutes(30);
+            while (!candidato.isAfter(limiteMaximo)) {
+                if (verificarHoraLibre(fecha, candidato, activos,
+                        ocupadosPorTecnico, pendientesSinAsignar, diaSemana)) {
+                    proxima = candidato;
+                    break;
+                }
+                candidato = candidato.plusMinutes(30);
+            }
+
+            // 3. Construir mensaje
+            StringBuilder msg = new StringBuilder(
+                "❌ Sin técnicos disponibles el " + fecha + " a las " + horaStr + ".");
+
+            if (huecoAntes != null) {
+                msg.append(" Hay disponibilidad antes: ")
+                   .append(huecoAntes.toString().substring(0, 5)).append(".");
+            }
+            if (proxima != null) {
+                msg.append(" Próxima hora disponible: ")
+                   .append(proxima.toString().substring(0, 5)).append(".");
+            }
+            if (huecoAntes == null && proxima == null) {
+                msg.append(" No hay horarios disponibles para ese día.");
+            }
+
+            return msg.toString();
+        }
+        return null; // hay disponibilidad
+    }
+
+    /** Auxiliar: comprueba si una hora concreta tiene al menos 1 técnico libre */
+    private boolean verificarHoraLibre(LocalDate fecha, LocalTime hora,
+            java.util.List<Tecnico> activos,
+            Map<Integer, List<java.time.LocalTime[]>> ocupadosPorTecnico,
+            java.util.List<LocalTime> pendientesSinAsignar,
+            int diaSemana) {
+        int capacidad = 0;
+        for (Tecnico t : activos) {
+            boolean[] dias = tecnicoDAO.cargarDiasHorario(t.getIdTecnico());
+            if (!dias[diaSemana - 1]) continue;
+            String[] hs = tecnicoDAO.cargarHorasHorario(t.getIdTecnico());
+            LocalTime ini = parsearHora(hs[0]); LocalTime fin = parsearHora(hs[1]);
+            if (ini == null) ini = LocalTime.of(8,0);
+            if (fin == null) fin = LocalTime.of(17,0);
+            if (hora.isBefore(ini) || hora.isAfter(fin.minusHours(2))) continue;
+            java.util.List<java.time.LocalTime[]> bloques =
+                    ocupadosPorTecnico.getOrDefault(t.getIdTecnico(), new java.util.ArrayList<>());
+            boolean solapado = false;
+            for (java.time.LocalTime[] b : bloques)
+                if (hora.isBefore(b[1]) && hora.plusHours(3).isAfter(b[0])) { solapado=true; break; }
+            if (!solapado) capacidad++;
+        }
+        long pendientesEnBloque = pendientesSinAsignar.stream().filter(h ->
+            hora.isBefore(h.plusHours(3)) && hora.plusHours(3).isAfter(h)
+        ).count();
+        return (capacidad - pendientesEnBloque) > 0;
+    }
+
+    private void mostrarAviso(String msg, boolean ok) {
+        if (lblDisponibilidad != null) {
+            lblDisponibilidad.setText(msg);
+            lblDisponibilidad.setStyle(ok
+                ? "-fx-text-fill: #2E7D32; -fx-font-size: 12px;"
+                : "-fx-text-fill: #C62828; -fx-font-size: 12px;");
+        }
     }
 
     // ── Auto-TERMINADO ───────────────────────────────────────
@@ -139,7 +306,7 @@ public class SolicitudController {
             boolean horaVencida = pasado || ahora.isAfter(horaSol.plusHours(2));
 
             if (horaVencida) {
-                dao.cambiarEstado(s.getIdSolicitud(), "TERMINADO");
+                dao.cambiarEstado(s.getIdSolicitud(), "COMPLETADA");
             }
         }
     }

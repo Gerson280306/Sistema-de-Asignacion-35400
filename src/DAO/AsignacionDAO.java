@@ -51,10 +51,6 @@ public class AsignacionDAO {
         StringBuilder sql = new StringBuilder(
             "UPDATE tb_asignacion SET estado_asignacion=?, observaciones=CONCAT(IFNULL(observaciones,''), ?) ");
         if (idTecnicoNuevo > 0) sql.append(", id_tecnico=").append(idTecnicoNuevo).append(" ");
-        if ("COMPLETADA".equals(nuevoEstado) || "CANCELADA".equals(nuevoEstado))
-            sql.append(", fecha_fin_real=NOW() ");
-        if ("EN_PROCESO".equals(nuevoEstado))
-            sql.append(", fecha_inicio_real=NOW() ");
         sql.append("WHERE id_asignacion=?");
         try (PreparedStatement ps = conn().prepareStatement(sql.toString())) {
             ps.setString(1, nuevoEstado);

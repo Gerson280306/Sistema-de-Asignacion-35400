@@ -13,6 +13,7 @@ import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -106,31 +107,48 @@ public class AsignacionController {
         });
         scheduler.scheduleAtFixedRate(() -> {
             try {
-                LocalDate hoy  = LocalDate.now();
-                LocalTime ahora = LocalTime.now();
+                LocalDateTime ahora = LocalDateTime.now();
                 List<Solicitud> lista = solicitudDAO.listarParaAutoTerminar();
-                boolean hubocambio = false;
+                boolean huboCambio = false;
+
                 for (Solicitud s : lista) {
                     if (s.getFechaSolicitada() == null || s.getHorarioPreferido() == null) continue;
-                    if (!s.getFechaSolicitada().equals(hoy)) continue;  // solo solicitudes de hoy
                     LocalTime hora = parsearHora(s.getHorarioPreferido());
                     if (hora == null) continue;
+
+                    // DateTime exacto de la solicitud
+                    LocalDateTime fechaHoraSolicitud = s.getFechaSolicitada().atTime(hora);
                     String estado = s.getEstado() != null ? s.getEstado().toUpperCase() : "";
-                    if ("PENDIENTE".equals(estado) && ahora.isAfter(hora.plusHours(1))) {
+
+                    // PENDIENTE sin asignar: 1 hora después → CANCELADA
+                    if ("PENDIENTE".equals(estado)
+                            && ahora.isAfter(fechaHoraSolicitud.plusHours(1))) {
                         solicitudDAO.cambiarEstado(s.getIdSolicitud(), "CANCELADA");
-                        hubocambio = true;
-                    } else if ("ASIGNADA".equals(estado) && ahora.isAfter(hora.plusHours(2))) {
+                        System.out.println("[Monitor] Solicitud #" + s.getIdSolicitud()
+                                + " cancelada por timeout.");
+                        huboCambio = true;
+
+                    // ASIGNADA: 2 horas después → COMPLETADA
+                    } else if ("ASIGNADA".equals(estado)
+                            && ahora.isAfter(fechaHoraSolicitud.plusHours(2))) {
                         solicitudDAO.cambiarEstado(s.getIdSolicitud(), "COMPLETADA");
-                        hubocambio = true;
+                        int idAsig = asignacionDAO.buscarIdPorSolicitud(s.getIdSolicitud());
+                        if (idAsig > 0) {
+                            asignacionDAO.cambiarEstado(idAsig, "COMPLETADA", -1,
+                                    "Auto-completada por el sistema");
+                        }
+                        System.out.println("[Monitor] Solicitud #" + s.getIdSolicitud()
+                                + " completada automaticamente.");
+                        huboCambio = true;
                     }
                 }
-                if (hubocambio) {
+                if (huboCambio) {
                     Platform.runLater(() -> cargarTodosLosData());
                 }
             } catch (Exception ex) {
                 System.err.println("[Monitor] Error: " + ex.getMessage());
             }
-        }, 10, 60, TimeUnit.SECONDS);
+        }, 5, 60, TimeUnit.SECONDS);
     }
 
     // ── Configuración de columnas ─────────────────────────────
