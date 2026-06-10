@@ -1,0 +1,263 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.layout.StackPane?>
+
+<StackPane xmlns="http://javafx.com/javafx/17"
+           xmlns:fx="http://javafx.com/fxml/1"
+           fx:controller="Controlador.TecnicoController"
+           fx:id="toastPane">
+<HBox
+      
+      spacing="16"
+      style="-fx-background-color: #F0F4F8;"
+      HBox.hgrow="ALWAYS">
+
+    <!-- PANEL IZQUIERDO -->
+    <VBox spacing="12" HBox.hgrow="ALWAYS">
+
+        <!-- Barra de búsqueda — sin filtro Disponibilidad -->
+        <HBox spacing="10" alignment="CENTER_LEFT"
+              style="-fx-background-color: white; -fx-padding: 14 16 14 16;
+                     -fx-background-radius: 10;">
+
+            <TextField fx:id="txtBuscar"
+                       promptText="🔍  Buscar técnico por nombre o DNI..."
+                       prefWidth="260" styleClass="text-field"
+                       onKeyReleased="#buscarTecnico"/>
+
+            <ComboBox fx:id="cmbFiltroEspecialidad"
+                      promptText="Especialidad" prefWidth="150"
+                      styleClass="combo-box" onAction="#filtrar"/>
+
+            <ComboBox fx:id="cmbFiltroDistrito"
+                      promptText="Distrito" prefWidth="130"
+                      styleClass="combo-box" onAction="#filtrar"/>
+
+            <Pane HBox.hgrow="ALWAYS"/>
+
+            <Button text="+ Nuevo técnico"
+                    styleClass="btn-primary"
+                    onAction="#nuevoTecnico"/>
+        </HBox>
+
+        <!-- Tabla técnicos — sin columna Disponible -->
+        <VBox VBox.vgrow="ALWAYS"
+              style="-fx-background-color: white; -fx-background-radius: 10;">
+            <TableView fx:id="tblTecnicos"
+                       VBox.vgrow="ALWAYS"
+                       styleClass="table-view"
+                       onMouseClicked="#seleccionarTecnico">
+                <columns>
+                    <TableColumn fx:id="colId"           text="ID"           prefWidth="55"  style="-fx-alignment: CENTER;"/>
+                    <TableColumn fx:id="colNombre"       text="Nombre"       prefWidth="190" style="-fx-alignment: CENTER;"/>
+                    <TableColumn fx:id="colDni"          text="DNI"          prefWidth="95"  style="-fx-alignment: CENTER;"/>
+                    <TableColumn fx:id="colEspecialidad" text="Especialidad" prefWidth="160" style="-fx-alignment: CENTER;"/>
+                    <TableColumn fx:id="colDistrito"     text="Distrito"     prefWidth="130" style="-fx-alignment: CENTER;"/>
+                    <TableColumn fx:id="colEstado"       text="Estado"       prefWidth="90"  style="-fx-alignment: CENTER;"/>
+                </columns>
+                <placeholder>
+                    <Label text="No hay técnicos registrados"
+                           style="-fx-text-fill: #A0ADB8; -fx-font-size: 13px;"/>
+                </placeholder>
+            </TableView>
+            <HBox style="-fx-padding: 8 16 8 16;">
+                <Label fx:id="lblContador"
+                       text="0 técnicos registrados"
+                       style="-fx-text-fill: #5A6A7A; -fx-font-size: 12px;"/>
+                <Pane HBox.hgrow="ALWAYS"/>
+                <Label fx:id="lblDisponibles"
+                       text=""
+                       style="-fx-text-fill: #2E7D32; -fx-font-size: 12px; -fx-font-weight: bold;"/>
+            </HBox>
+        </VBox>
+    </VBox>
+
+    <!-- PANEL DERECHO: formulario -->
+    <VBox prefWidth="340" spacing="0"
+          style="-fx-background-color: white; -fx-background-radius: 10;">
+
+        <HBox style="-fx-padding: 16 20 0 20;" alignment="CENTER_LEFT">
+            <Label fx:id="lblTituloForm"
+                   text="Nuevo técnico"
+                   style="-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #1A2332;"
+                   HBox.hgrow="ALWAYS"/>
+            <Button text="✕"
+                    style="-fx-background-color: transparent; -fx-text-fill: #A0ADB8;
+                           -fx-font-size: 14px; -fx-cursor: hand; -fx-padding: 2 6 2 6;"
+                    onAction="#limpiarFormulario"/>
+        </HBox>
+
+        <TabPane tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS"
+                 style="-fx-background-color: transparent; -fx-tab-min-height: 32px;">
+
+            <!-- Tab Datos — sin campo Disponibilidad -->
+            <Tab text="Datos">
+                <ScrollPane fitToWidth="true"
+                            style="-fx-background-color: transparent; -fx-background: transparent;
+                                   -fx-border-color: transparent;">
+                    <VBox spacing="14" style="-fx-padding: 16 20 16 20;">
+
+                        <VBox spacing="5">
+                            <Label text="NOMBRES" styleClass="label-field"/>
+                            <TextField fx:id="txtNombres" promptText="Ej: Juan Carlos"
+                                       styleClass="text-field"/>
+                        </VBox>
+                        <VBox spacing="5">
+                            <Label text="APELLIDOS" styleClass="label-field"/>
+                            <TextField fx:id="txtApellidos" promptText="Ej: García López"
+                                       styleClass="text-field"/>
+                        </VBox>
+                        <VBox spacing="5">
+                            <Label text="DNI" styleClass="label-field"/>
+                            <TextField fx:id="txtDni" promptText="Ej: 12345678"
+                                       styleClass="text-field"/>
+                        </VBox>
+                        <VBox spacing="5">
+                            <Label text="TELÉFONO" styleClass="label-field"/>
+                            <TextField fx:id="txtTelefono" promptText="Ej: 999 888 777"
+                                       styleClass="text-field"/>
+                        </VBox>
+                        <VBox spacing="5">
+                            <Label text="CORREO" styleClass="label-field"/>
+                            <TextField fx:id="txtEmail" promptText="correo@ejemplo.com"
+                                       styleClass="text-field"/>
+                        </VBox>
+
+                        <Separator/>
+
+                        <VBox spacing="5">
+                            <Label text="ESPECIALIDAD" styleClass="label-field"/>
+                            <ComboBox fx:id="cmbEspecialidad"
+                                      promptText="Seleccionar especialidad"
+                                      prefWidth="1000" styleClass="combo-box"/>
+                        </VBox>
+                        <VBox spacing="5">
+                            <Label text="DISTRITO" styleClass="label-field"/>
+                            <ComboBox fx:id="cmbDistrito" promptText="Seleccionar distrito"
+                                      prefWidth="1000" styleClass="combo-box"/>
+                        </VBox>
+
+                        <Label fx:id="lblMensaje" text="" wrapText="true"
+                               style="-fx-font-size: 12px;"/>
+                    </VBox>
+                </ScrollPane>
+            </Tab>
+
+            <!-- Tab Horario -->
+            <Tab text="Horario">
+                <VBox spacing="14" style="-fx-padding: 16 20 16 20;">
+                    <Label text="HORARIO DE TRABAJO" styleClass="label-section"/>
+
+                    <VBox spacing="4">
+                        <Label text="HORA INICIO" styleClass="label-field"/>
+                        <HBox spacing="0" alignment="CENTER_LEFT"
+                              style="-fx-background-color: white; -fx-border-color: #DDE3EA;
+                                     -fx-border-width: 1.5; -fx-border-radius: 6;
+                                     -fx-background-radius: 6; -fx-padding: 6 10 6 10;">
+                            <Label text="&#128336;" style="-fx-font-size: 15px; -fx-padding: 0 8 0 0;"/>
+                            <TextField fx:id="txtInicioHH" promptText="08" prefWidth="42"
+                                       style="-fx-background-color: transparent; -fx-border-color: transparent;
+                                              -fx-font-size: 15px; -fx-font-weight: bold;
+                                              -fx-text-fill: #1A2332; -fx-alignment: CENTER; -fx-padding: 0;"/>
+                            <Label text=":" style="-fx-font-size: 17px; -fx-font-weight: bold;
+                                                  -fx-text-fill: #1A2332; -fx-padding: 0 2 2 2;"/>
+                            <TextField fx:id="txtInicioMM" promptText="00" prefWidth="42"
+                                       style="-fx-background-color: transparent; -fx-border-color: transparent;
+                                              -fx-font-size: 15px; -fx-font-weight: bold;
+                                              -fx-text-fill: #1A2332; -fx-alignment: CENTER; -fx-padding: 0;"/>
+                            <Pane HBox.hgrow="ALWAYS"/>
+                            <Button fx:id="btnInicio0700" text="09:00"
+                                    style="-fx-background-color: #EBF3FF; -fx-text-fill: #1565C0;
+                                           -fx-font-size: 11px; -fx-padding: 4 8 4 8;
+                                           -fx-background-radius: 4; -fx-cursor: hand; -fx-border-color: transparent;"/>
+                            <Button fx:id="btnInicio0800" text="08:00"
+                                    style="-fx-background-color: #EBF3FF; -fx-text-fill: #1565C0;
+                                           -fx-font-size: 11px; -fx-padding: 4 8 4 8;
+                                           -fx-background-radius: 4; -fx-cursor: hand; -fx-border-color: transparent;"/>
+                        </HBox>
+                    </VBox>
+
+                    <VBox spacing="4">
+                        <Label text="HORA FIN" styleClass="label-field"/>
+                        <HBox spacing="0" alignment="CENTER_LEFT"
+                              style="-fx-background-color: white; -fx-border-color: #DDE3EA;
+                                     -fx-border-width: 1.5; -fx-border-radius: 6;
+                                     -fx-background-radius: 6; -fx-padding: 6 10 6 10;">
+                            <Label text="&#128340;" style="-fx-font-size: 15px; -fx-padding: 0 8 0 0;"/>
+                            <TextField fx:id="txtFinHH" promptText="17" prefWidth="42"
+                                       style="-fx-background-color: transparent; -fx-border-color: transparent;
+                                              -fx-font-size: 15px; -fx-font-weight: bold;
+                                              -fx-text-fill: #1A2332; -fx-alignment: CENTER; -fx-padding: 0;"/>
+                            <Label text=":" style="-fx-font-size: 17px; -fx-font-weight: bold;
+                                                  -fx-text-fill: #1A2332; -fx-padding: 0 2 2 2;"/>
+                            <TextField fx:id="txtFinMM" promptText="00" prefWidth="42"
+                                       style="-fx-background-color: transparent; -fx-border-color: transparent;
+                                              -fx-font-size: 15px; -fx-font-weight: bold;
+                                              -fx-text-fill: #1A2332; -fx-alignment: CENTER; -fx-padding: 0;"/>
+                            <Pane HBox.hgrow="ALWAYS"/>
+                            <Button fx:id="btnFin1700" text="17:00"
+                                    style="-fx-background-color: #EBF3FF; -fx-text-fill: #1565C0;
+                                           -fx-font-size: 11px; -fx-padding: 4 8 4 8;
+                                           -fx-background-radius: 4; -fx-cursor: hand; -fx-border-color: transparent;"/>
+                            <Button fx:id="btnFin1800" text="18:00"
+                                    style="-fx-background-color: #EBF3FF; -fx-text-fill: #1565C0;
+                                           -fx-font-size: 11px; -fx-padding: 4 8 4 8;
+                                           -fx-background-radius: 4; -fx-cursor: hand; -fx-border-color: transparent;"/>
+                        </HBox>
+                    </VBox>
+
+                    <Separator/>
+                    <Label text="DÍAS DE ATENCIÓN" styleClass="label-field"/>
+                    <HBox spacing="8">
+                        <CheckBox fx:id="chkLunes"     text="Lun" selected="true"/>
+                        <CheckBox fx:id="chkMartes"    text="Mar" selected="true"/>
+                        <CheckBox fx:id="chkMiercoles" text="Mié" selected="true"/>
+                        <CheckBox fx:id="chkJueves"    text="Jue" selected="true"/>
+                        <CheckBox fx:id="chkViernes"   text="Vie" selected="true"/>
+                    </HBox>
+                    <HBox spacing="8">
+                        <CheckBox fx:id="chkSabado"  text="Sáb"/>
+                        <CheckBox fx:id="chkDomingo" text="Dom"/>
+                    </HBox>
+
+                    <Separator/>
+                    <Label text="MÁXIMO DE ASIGNACIONES DIARIAS" styleClass="label-field"/>
+                    <Spinner fx:id="spMaxAsignaciones"
+                             min="1" max="20" initialValue="5"
+                             prefWidth="100"
+                             style="-fx-background-color: white; -fx-border-color: #DDE3EA;
+                                    -fx-border-radius: 6; -fx-background-radius: 6;"/>
+                </VBox>
+            </Tab>
+
+        </TabPane>
+
+        <!-- Botones -->
+        <VBox spacing="8" style="-fx-padding: 16 20 16 20;
+                                  -fx-border-color: #F0F4F8 transparent transparent transparent;
+                                  -fx-border-width: 1;">
+            <Button fx:id="btnGuardar"
+                    text="Guardar técnico"
+                    maxWidth="1000" prefHeight="40"
+                    styleClass="btn-primary"
+                    onAction="#guardarTecnico"/>
+            <HBox spacing="8">
+                <Button fx:id="btnEliminar"
+                        text="Desactivar"
+                        HBox.hgrow="ALWAYS" maxWidth="1000" prefHeight="36"
+                        styleClass="btn-danger" disable="true"
+                        onAction="#eliminarTecnico"/>
+                <Button fx:id="btnCancelar"
+                        text="Cancelar"
+                        HBox.hgrow="ALWAYS" maxWidth="1000" prefHeight="36"
+                        styleClass="btn-secondary"
+                        onAction="#limpiarFormulario"/>
+            </HBox>
+        </VBox>
+    </VBox>
+
+</HBox>
+</StackPane>

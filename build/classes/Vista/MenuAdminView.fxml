@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.geometry.*?>
+
+<!--
+    MenuAdminView.fxml
+    Controlador: Controlador.MenuAdminController
+    Panel principal del Administrador.
+    Módulos: Dashboard · Gestión de Cuentas · Reportes
+-->
+<BorderPane xmlns="http://javafx.com/javafx/17"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="Controlador.MenuAdminController"
+            prefWidth="1200" prefHeight="700"
+            stylesheets="@styles.css">
+
+    <!-- ═══════════════════════════════════════
+         SIDEBAR IZQUIERDO
+    ═══════════════════════════════════════ -->
+    <left>
+        <VBox styleClass="sidebar" prefWidth="230">
+
+            <!-- Logo -->
+            <VBox styleClass="sidebar-logo-area" spacing="3">
+                <HBox spacing="10" alignment="CENTER_LEFT">
+                    <StackPane>
+                        <Pane prefWidth="36" prefHeight="36"
+                              style="-fx-background-color: #7B1FA2; -fx-background-radius: 8;"/>
+                        <Label text="SBR"
+                               style="-fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: bold;"/>
+                    </StackPane>
+                    <VBox spacing="1">
+                        <Label text="Sistema de" styleClass="sidebar-logo-sub"/>
+                        <Label text="Asignación" styleClass="sidebar-logo-text"/>
+                    </VBox>
+                </HBox>
+            </VBox>
+
+            <Separator style="-fx-border-color: #1A3A5C;"/>
+
+            <!-- Info del admin -->
+            <HBox style="-fx-padding: 14 16 14 16; -fx-background-color: #1A0A2E;"
+                  spacing="10" alignment="CENTER_LEFT">
+                <StackPane>
+                    <Pane prefWidth="32" prefHeight="32"
+                          style="-fx-background-color: #7B1FA2; -fx-background-radius: 16;"/>
+                    <Label text="A"
+                           style="-fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold;"/>
+                </StackPane>
+                <VBox spacing="1">
+                    <Label fx:id="lblNombreAdmin"
+                           text="Administrador"
+                           style="-fx-text-fill: white; -fx-font-size: 12px; -fx-font-weight: bold;"/>
+                    <Label text="ROL: ADMINISTRADOR"
+                           style="-fx-text-fill: #CE93D8; -fx-font-size: 10px; -fx-font-weight: bold;"/>
+                </VBox>
+            </HBox>
+
+            <Separator style="-fx-border-color: #1A3A5C;"/>
+
+            <!-- Menú de navegación -->
+            <ScrollPane VBox.vgrow="ALWAYS"
+                        fitToWidth="true"
+                        style="-fx-background-color: transparent; -fx-background: transparent; -fx-border-color: transparent;">
+                <VBox spacing="0">
+
+                    <Label text="PRINCIPAL" styleClass="sidebar-section-label"/>
+
+                    <Button fx:id="btnDashboard"
+                            text="⬛  Panel principal"
+                            styleClass="sidebar-item-active"
+                            onAction="#mostrarDashboard"/>
+
+                    <Label text="ADMINISTRACIÓN" styleClass="sidebar-section-label"/>
+
+                    <Button fx:id="btnCuentas"
+                            text="👤  Gestión de cuentas"
+                            styleClass="sidebar-item"
+                            onAction="#mostrarCuentas"/>
+
+                    <Button fx:id="btnReportes"
+                            text="📊  Reportes del sistema"
+                            styleClass="sidebar-item"
+                            onAction="#mostrarReportes"/>
+
+                </VBox>
+            </ScrollPane>
+
+            <Separator style="-fx-border-color: #1A3A5C;"/>
+            <Button text="⬅  Cerrar sesión"
+                    styleClass="sidebar-item"
+                    style="-fx-text-fill: #EF5350;"
+                    onAction="#cerrarSesion"
+                    prefWidth="230"/>
+
+        </VBox>
+    </left>
+
+    <!-- ═══════════════════════════════════════
+         ÁREA PRINCIPAL
+    ═══════════════════════════════════════ -->
+    <center>
+        <VBox style="-fx-background-color: #F0F4F8;">
+
+            <!-- Topbar -->
+            <HBox style="-fx-background-color: white;
+                         -fx-border-color: transparent transparent #DDE3EA transparent;
+                         -fx-border-width: 1;
+                         -fx-padding: 14 20 14 20;"
+                  alignment="CENTER_LEFT" spacing="10">
+                <Label fx:id="lblModuloActual"
+                       text="Panel principal"
+                       style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #1A2332;"/>
+                <Pane HBox.hgrow="ALWAYS"/>
+                <Label text="ADMINISTRADOR"
+                       style="-fx-background-color: #EDE7F6; -fx-text-fill: #6A1B9A;
+                              -fx-font-size: 11px; -fx-font-weight: bold;
+                              -fx-padding: 4 10 4 10; -fx-background-radius: 20;"/>
+            </HBox>
+
+            <!-- Contenido dinámico -->
+            <StackPane fx:id="contentArea" VBox.vgrow="ALWAYS"
+                       style="-fx-padding: 20;">
+
+                <!-- Dashboard por defecto -->
+                <VBox spacing="20">
+
+                    <!-- KPIs de resumen -->
+                    <HBox spacing="16">
+                        <VBox HBox.hgrow="ALWAYS" spacing="6"
+                              style="-fx-background-color: white; -fx-background-radius: 10;
+                                     -fx-padding: 20; -fx-effect: dropshadow(gaussian,rgba(0,0,0,0.06),8,0,0,2);">
+                            <Label text="CUENTAS ACTIVAS"
+                                   style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #6A1B9A;"/>
+                            <Label text="— gestores"
+                                   style="-fx-font-size: 26px; -fx-font-weight: bold; -fx-text-fill: #7B1FA2;"/>
+                            <Label text="Supervisores y operadores"
+                                   style="-fx-font-size: 12px; -fx-text-fill: #5A6A7A;"/>
+                        </VBox>
+                        <VBox HBox.hgrow="ALWAYS" spacing="6"
+                              style="-fx-background-color: white; -fx-background-radius: 10;
+                                     -fx-padding: 20; -fx-effect: dropshadow(gaussian,rgba(0,0,0,0.06),8,0,0,2);">
+                            <Label text="CLIENTES REGISTRADOS"
+                                   style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #1565C0;"/>
+                            <Label text="— clientes"
+                                   style="-fx-font-size: 26px; -fx-font-weight: bold; -fx-text-fill: #1565C0;"/>
+                            <Label text="En la base de datos"
+                                   style="-fx-font-size: 12px; -fx-text-fill: #5A6A7A;"/>
+                        </VBox>
+                        <VBox HBox.hgrow="ALWAYS" spacing="6"
+                              style="-fx-background-color: white; -fx-background-radius: 10;
+                                     -fx-padding: 20; -fx-effect: dropshadow(gaussian,rgba(0,0,0,0.06),8,0,0,2);">
+                            <Label text="TÉCNICOS ACTIVOS"
+                                   style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #2E7D32;"/>
+                            <Label text="— técnicos"
+                                   style="-fx-font-size: 26px; -fx-font-weight: bold; -fx-text-fill: #2E7D32;"/>
+                            <Label text="En campo"
+                                   style="-fx-font-size: 12px; -fx-text-fill: #5A6A7A;"/>
+                        </VBox>
+                        <VBox HBox.hgrow="ALWAYS" spacing="6"
+                              style="-fx-background-color: white; -fx-background-radius: 10;
+                                     -fx-padding: 20; -fx-effect: dropshadow(gaussian,rgba(0,0,0,0.06),8,0,0,2);">
+                            <Label text="SOLICITUDES HOY"
+                                   style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #E65100;"/>
+                            <Label text="— solicitudes"
+                                   style="-fx-font-size: 26px; -fx-font-weight: bold; -fx-text-fill: #E65100;"/>
+                            <Label text="Registradas hoy"
+                                   style="-fx-font-size: 12px; -fx-text-fill: #5A6A7A;"/>
+                        </VBox>
+                    </HBox>
+
+                    <!-- Accesos rápidos -->
+                    <HBox spacing="16">
+                        <VBox HBox.hgrow="ALWAYS" spacing="12"
+                              style="-fx-background-color: white; -fx-background-radius: 10;
+                                     -fx-padding: 24; -fx-effect: dropshadow(gaussian,rgba(0,0,0,0.06),8,0,0,2);">
+                            <Label text="Gestión de cuentas"
+                                   style="-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #1A2332;"/>
+                            <Label text="Administra los usuarios gestores del sistema. Crea, edita, activa o desactiva cuentas de supervisores y operadores."
+                                   style="-fx-text-fill: #5A6A7A; -fx-font-size: 12px;"
+                                   wrapText="true"/>
+                            <Button text="Ir a Gestión de Cuentas →"
+                                    onAction="#mostrarCuentas"
+                                    style="-fx-background-color: #7B1FA2; -fx-text-fill: white;
+                                           -fx-font-weight: bold; -fx-padding: 9 18 9 18;
+                                           -fx-background-radius: 6; -fx-cursor: hand;"/>
+                        </VBox>
+                        <VBox HBox.hgrow="ALWAYS" spacing="12"
+                              style="-fx-background-color: white; -fx-background-radius: 10;
+                                     -fx-padding: 24; -fx-effect: dropshadow(gaussian,rgba(0,0,0,0.06),8,0,0,2);">
+                            <Label text="Reportes del sistema"
+                                   style="-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #1A2332;"/>
+                            <Label text="Genera reportes detallados de clientes, técnicos y solicitudes. Filtra por fechas para análisis específicos."
+                                   style="-fx-text-fill: #5A6A7A; -fx-font-size: 12px;"
+                                   wrapText="true"/>
+                            <Button text="Ir a Reportes →"
+                                    onAction="#mostrarReportes"
+                                    style="-fx-background-color: #1565C0; -fx-text-fill: white;
+                                           -fx-font-weight: bold; -fx-padding: 9 18 9 18;
+                                           -fx-background-radius: 6; -fx-cursor: hand;"/>
+                        </VBox>
+                    </HBox>
+
+                </VBox>
+            </StackPane>
+        </VBox>
+    </center>
+
+</BorderPane>
