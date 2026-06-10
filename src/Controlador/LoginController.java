@@ -10,7 +10,10 @@ import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
-
+import java.util.Optional;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.TextInputDialog;
 /**
  * LoginController.java
  * Autenticación real desde tb_usuario (SHA-256).
@@ -50,6 +53,61 @@ public class LoginController {
             abrirVista("/Vista/MenuPrincipalView.fxml", "Sistema de Asignación", usuario);
         }
     }
+    
+    @FXML
+private void recuperarPassword() {
+
+    TextInputDialog dialog = new TextInputDialog();
+
+    dialog.setTitle("Recuperar contraseña");
+    dialog.setHeaderText("Recuperación de acceso");
+    dialog.setContentText("Ingrese su usuario:");
+
+    Optional<String> result = dialog.showAndWait();
+
+    if(result.isPresent()) {
+
+        String usuario = result.get().trim();
+
+        if(usuario.isEmpty()) {
+            return;
+        }
+
+        String nuevaPassword =
+                usuarioDAO.restablecerPassword(usuario);
+
+        if(nuevaPassword != null) {
+
+            Alert ok =
+                new Alert(Alert.AlertType.INFORMATION);
+
+            ok.setTitle("Contraseña restablecida");
+            ok.setHeaderText("Operación exitosa");
+
+            ok.setContentText(
+                "Su nueva contraseña temporal es:\n\n"
+                + nuevaPassword
+                + "\n\nRecuerde cambiarla después de iniciar sesión."
+            );
+
+            ok.showAndWait();
+
+        } else {
+
+            Alert error =
+                new Alert(Alert.AlertType.ERROR);
+
+            error.setTitle("Error");
+            error.setHeaderText(null);
+
+            error.setContentText(
+                "No existe un usuario con ese nombre."
+            );
+
+            error.showAndWait();
+        }
+    }
+}
 
     private void abrirVista(String fxmlPath, String titulo, Usuario usuario) {
         try {

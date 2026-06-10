@@ -3,13 +3,12 @@ import java.time.LocalDate;
 
 public class Solicitud {
     private int idSolicitud;
-    private String codigo;
     private int idCliente;
     private String nombreCliente;
     private int idTipoServicio;
     private String nombreTipo;
     private String descripcion, prioridad;
-    private String direccionAtencion, referenciaAtencion;
+    private String direccionCliente;
     private LocalDate fechaSolicitada;
     private String horarioPreferido; // "HH:MM"
     private String estado, observaciones;
@@ -17,8 +16,6 @@ public class Solicitud {
 
     public int getIdSolicitud() { return idSolicitud; }
     public void setIdSolicitud(int v) { idSolicitud = v; }
-    public String getCodigo() { return codigo; }
-    public void setCodigo(String v) { codigo = v; }
     public int getIdCliente() { return idCliente; }
     public void setIdCliente(int v) { idCliente = v; }
     public String getNombreCliente() { return nombreCliente; }
@@ -31,10 +28,8 @@ public class Solicitud {
     public void setDescripcion(String v) { descripcion = v; }
     public String getPrioridad() { return prioridad; }
     public void setPrioridad(String v) { prioridad = v; }
-    public String getDireccionAtencion() { return direccionAtencion; }
-    public void setDireccionAtencion(String v) { direccionAtencion = v; }
-    public String getReferenciaAtencion() { return referenciaAtencion; }
-    public void setReferenciaAtencion(String v) { referenciaAtencion = v; }
+    public String getDireccionCliente() { return direccionCliente; }
+    public void setDireccionCliente(String v) { direccionCliente = v; }
     public LocalDate getFechaSolicitada() { return fechaSolicitada; }
     public void setFechaSolicitada(LocalDate v) { fechaSolicitada = v; }
     public String getHorarioPreferido() { return horarioPreferido; }

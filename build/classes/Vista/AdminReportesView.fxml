@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.geometry.*?>
+
+<!--
+    AdminReportesView.fxml
+    Controlador: Controlador.AdminReportesController
+    - Clientes / Técnicos: filtro por Estado (Activo/Inactivo/Todos)
+    - Solicitudes: filtro por Fecha Desde–Hasta
+    - La tabla se actualiza automáticamente al cambiar el tipo de reporte
+-->
+<VBox xmlns="http://javafx.com/javafx/17"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="Controlador.AdminReportesController"
+      spacing="16"
+      style="-fx-background-color: #F0F4F8; -fx-padding: 0;"
+      VBox.vgrow="ALWAYS">
+
+    <!-- ── Barra de filtros ──────────────────────────────────────────────── -->
+    <HBox spacing="12" alignment="CENTER_LEFT"
+          style="-fx-background-color: white; -fx-padding: 14 16 14 16;
+                 -fx-border-color: transparent transparent #DDE3EA transparent;
+                 -fx-border-width: 1;">
+
+        <!-- Tipo de reporte -->
+        <ComboBox fx:id="cmbTipoReporte"
+                  promptText="Tipo de reporte"
+                  prefWidth="220"
+                  styleClass="combo-box"
+                  onAction="#onTipoReporteChanged"/>
+
+        <!-- Filtro ESTADO (Clientes / Técnicos) -->
+        <HBox fx:id="panelFiltroEstado" spacing="8" alignment="CENTER_LEFT"
+              visible="true" managed="true">
+            <Label text="Estado:" style="-fx-text-fill: #5A6A7A; -fx-font-size: 12px;"/>
+            <ComboBox fx:id="cmbFiltroEstado"
+                      prefWidth="160"
+                      styleClass="combo-box"/>
+        </HBox>
+
+        <!-- Filtro FECHAS (Solicitudes) -->
+        <HBox fx:id="panelFiltroFecha" spacing="8" alignment="CENTER_LEFT"
+              visible="false" managed="false">
+            <Label text="Desde:" style="-fx-text-fill: #5A6A7A; -fx-font-size: 12px;"/>
+            <DatePicker fx:id="dpDesde" promptText="Fecha inicio" prefWidth="140"
+                        styleClass="date-picker"/>
+            <Label text="Hasta:" style="-fx-text-fill: #5A6A7A; -fx-font-size: 12px;"/>
+            <DatePicker fx:id="dpHasta" promptText="Fecha fin" prefWidth="140"
+                        styleClass="date-picker"/>
+        </HBox>
+
+        <Button text="Generar reporte"
+                onAction="#generarReporte"
+                styleClass="btn-primary"/>
+
+        <Button text="Limpiar"
+                onAction="#limpiar"
+                styleClass="btn-secondary"/>
+    </HBox>
+
+    <!-- ── KPIs ─────────────────────────────────────────────────────────── -->
+    <HBox spacing="16">
+        <VBox HBox.hgrow="ALWAYS" spacing="6" styleClass="card" style="-fx-padding: 16;">
+            <Label fx:id="kpi1Label" text="—" styleClass="label-field"/>
+            <Label fx:id="kpi1Valor" text="—"
+                   style="-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: #7B1FA2;"/>
+        </VBox>
+        <VBox HBox.hgrow="ALWAYS" spacing="6" styleClass="card" style="-fx-padding: 16;">
+            <Label fx:id="kpi2Label" text="—" styleClass="label-field"/>
+            <Label fx:id="kpi2Valor" text="—"
+                   style="-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: #1565C0;"/>
+        </VBox>
+        <VBox HBox.hgrow="ALWAYS" spacing="6" styleClass="card" style="-fx-padding: 16;">
+            <Label fx:id="kpi3Label" text="—" styleClass="label-field"/>
+            <Label fx:id="kpi3Valor" text="—"
+                   style="-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: #2E7D32;"/>
+        </VBox>
+        <VBox HBox.hgrow="ALWAYS" spacing="6" styleClass="card" style="-fx-padding: 16;">
+            <Label fx:id="kpi4Label" text="—" styleClass="label-field"/>
+            <Label fx:id="kpi4Valor" text="—"
+                   style="-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: #F57F17;"/>
+        </VBox>
+    </HBox>
+
+    <!-- ── Tabla dinámica ───────────────────────────────────────────────── -->
+    <VBox VBox.vgrow="ALWAYS" styleClass="card" style="-fx-padding: 0;">
+
+        <HBox style="-fx-padding: 14 16 14 16;
+                     -fx-border-color: transparent transparent #F0F4F8 transparent;
+                     -fx-border-width: 1;"
+              alignment="CENTER_LEFT">
+            <Label fx:id="lblTituloTabla"
+                   text="Resultados del reporte"
+                   styleClass="label-section"
+                   HBox.hgrow="ALWAYS"/>
+            <Label fx:id="lblContador"
+                   text="0 registros"
+                   styleClass="label-subtitle"/>
+        </HBox>
+
+        <TableView fx:id="tblReporte" VBox.vgrow="ALWAYS" styleClass="table-view">
+            <placeholder>
+                <Label text="Selecciona un tipo de reporte y presiona Generar"
+                       styleClass="label-subtitle"/>
+            </placeholder>
+        </TableView>
+
+    </VBox>
+
+</VBox>

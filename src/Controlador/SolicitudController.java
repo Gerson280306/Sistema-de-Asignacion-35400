@@ -9,9 +9,16 @@ import Modelo.TipoServicio;
 import Conexion.ConexionDB;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.animation.FadeTransition;
+import javafx.animation.PauseTransition;
+import javafx.animation.SequentialTransition;
 import javafx.fxml.FXML;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.StackPane;
+import javafx.util.Duration;
 
 import java.sql.*;
 import java.time.LocalDate;
@@ -41,6 +48,9 @@ public class SolicitudController {
     @FXML private TextField              txtHoraHH, txtHoraMM;
     @FXML private TextArea               txtDescripcion, txtObservaciones;
     @FXML private Button                 btnGuardar, btnCancelarSolicitud;
+
+    /** StackPane raíz del FXML — necesario para el toast */
+    @FXML private StackPane toastPane;
 
     private final SolicitudDAO dao = new SolicitudDAO();
     private final TecnicoDAO tecnicoDAO = new TecnicoDAO();
@@ -376,7 +386,6 @@ public class SolicitudController {
         for (Solicitud s : todasLasSolicitudes) {
             boolean matchTexto = txt.isEmpty()
                 || (s.getNombreCliente() != null && s.getNombreCliente().toLowerCase().contains(txt))
-                || (s.getCodigo()        != null && s.getCodigo().toLowerCase().contains(txt))
                 || (s.getNombreTipo()    != null && s.getNombreTipo().toLowerCase().contains(txt));
             boolean matchEstado = estado == null || estado.equals(s.getEstado());
             if (matchTexto && matchEstado) filtradas.add(s);
@@ -438,6 +447,8 @@ public class SolicitudController {
         }
 
         if (ok) {
+            // Toast de éxito
+            mostrarToast(solicitudSeleccionada == null ? "✔  Solicitud nueva registrada" : "✔  Solicitud actualizada", true);
             mostrarMensaje(solicitudSeleccionada == null ? "Solicitud registrada." : "Solicitud actualizada.", true);
             actualizarTerminadas();
             cargarTabla();
@@ -451,11 +462,12 @@ public class SolicitudController {
     @FXML public void cancelarSolicitud() {
         if (solicitudSeleccionada == null) return;
         Alert a = new Alert(Alert.AlertType.CONFIRMATION,
-            "¿Cancelar la solicitud " + solicitudSeleccionada.getCodigo() + "?",
+            "¿Cancelar la solicitud #" + solicitudSeleccionada.getIdSolicitud() + "?",
             ButtonType.YES, ButtonType.NO);
         a.setHeaderText(null);
         a.showAndWait().ifPresent(bt -> {
             if (bt == ButtonType.YES && dao.cambiarEstado(solicitudSeleccionada.getIdSolicitud(), "CANCELADA")) {
+                mostrarToast("✔  Solicitud cancelada", true);
                 mostrarMensaje("Solicitud cancelada.", true);
                 actualizarTerminadas();
                 cargarTabla();
@@ -515,4 +527,39 @@ public class SolicitudController {
                                : "-fx-text-fill: #C62828; -fx-font-size: 12px;");
     }
     private String nvl(String s) { return s == null ? "" : s; }
+
+    /**
+     * Toast animado (fade-in → pausa 2.5 s → fade-out).
+     * Requiere un StackPane con fx:id="toastPane" en el FXML raíz.
+     */
+    private void mostrarToast(String mensaje, boolean exito) {
+        if (toastPane == null) return;
+
+        // Label con padding CSS — se auto-dimensiona solo al texto
+        Label toast = new Label(mensaje);
+        toast.setWrapText(false);
+        toast.setStyle(
+            "-fx-font-size: 13px;" +
+            "-fx-font-weight: bold;" +
+            "-fx-text-fill: white;" +
+            "-fx-padding: 10 20 10 20;" +
+            "-fx-background-radius: 18;" +
+            (exito ? "-fx-background-color: #2E7D32;" : "-fx-background-color: #C62828;") +
+            "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.28), 8, 0, 0, 2);"
+        );
+        StackPane.setAlignment(toast, Pos.CENTER);
+
+        toastPane.getChildren().add(toast);
+
+        FadeTransition fadeIn  = new FadeTransition(Duration.millis(200), toast);
+        fadeIn.setFromValue(0); fadeIn.setToValue(1);
+        PauseTransition pausa  = new PauseTransition(Duration.seconds(2.2));
+        FadeTransition fadeOut = new FadeTransition(Duration.millis(350), toast);
+        fadeOut.setFromValue(1); fadeOut.setToValue(0);
+
+        SequentialTransition seq = new SequentialTransition(fadeIn, pausa, fadeOut);
+        seq.setOnFinished(e -> toastPane.getChildren().remove(toast));
+        seq.play();
+    }
+
 }

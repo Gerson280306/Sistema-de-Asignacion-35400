@@ -4,18 +4,24 @@ import DAO.ClienteDAO;
 import Modelo.Cliente;
 import Modelo.Zona;
 import Conexion.ConexionDB;
+import javafx.animation.FadeTransition;
+import javafx.animation.PauseTransition;
+import javafx.animation.SequentialTransition;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.StackPane;
+import javafx.util.Duration;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
 public class ClienteController {
 
-    // Distritos disponibles (deben existir en tb_zona)
     private static final String[] NOMBRES_DISTRITO = {
         "San Bartolo", "Punta Negra", "Punta Hermoso", "Pucusana"
     };
@@ -32,6 +38,9 @@ public class ClienteController {
     @FXML private ComboBox<Zona> cmbDistrito;
     @FXML private TextArea txtReferencia;
     @FXML private Button btnGuardar, btnEliminar;
+
+    /** StackPane raíz del FXML — necesario para el toast */
+    @FXML private StackPane toastPane;
 
     private final ClienteDAO dao = new ClienteDAO();
     private Cliente clienteSeleccionado = null;
@@ -93,9 +102,7 @@ public class ClienteController {
     }
 
     @FXML public void nuevoCliente() { limpiarFormulario(); }
-
     @FXML public void buscarCliente() { aplicarFiltros(); }
-
     @FXML public void filtrarEstado() { aplicarFiltros(); }
 
     private void aplicarFiltros() {
@@ -137,7 +144,6 @@ public class ClienteController {
         txtDireccion.setText(nvl(sel.getDireccion()));
         txtReferencia.setText(nvl(sel.getReferencia()));
 
-        // Seleccionar distrito por id_zona
         cmbDistrito.getItems().stream()
             .filter(z -> z.getIdZona() == sel.getIdZona())
             .findFirst().ifPresent(cmbDistrito::setValue);
@@ -159,7 +165,8 @@ public class ClienteController {
         c.setEstado(clienteSeleccionado == null ? 1 : clienteSeleccionado.getEstado());
 
         boolean ok;
-        if (clienteSeleccionado == null) {
+        boolean esNuevo = (clienteSeleccionado == null);
+        if (esNuevo) {
             if (dao.existeDni(c.getDni(), 0)) { mostrarMensaje("El DNI/RUC ya está registrado.", false); return; }
             ok = dao.guardar(c);
         } else {
@@ -168,9 +175,12 @@ public class ClienteController {
             ok = dao.actualizar(c);
         }
         if (ok) {
-            mostrarMensaje(clienteSeleccionado == null ? "Cliente registrado." : "Cliente actualizado.", true);
+            mostrarToast(esNuevo ? "✔  Cliente nuevo registrado" : "✔  Cliente actualizado", true);
+            mostrarMensaje(esNuevo ? "Cliente registrado." : "Cliente actualizado.", true);
             cargarTabla(); limpiarFormulario();
-        } else mostrarMensaje("Error al guardar.", false);
+        } else {
+            mostrarMensaje("Error al guardar.", false);
+        }
     }
 
     @FXML public void eliminarCliente() {
@@ -185,7 +195,9 @@ public class ClienteController {
             if (bt == ButtonType.YES) {
                 clienteSeleccionado.setEstado(estaActivo ? 0 : 1);
                 if (dao.actualizar(clienteSeleccionado)) {
-                    mostrarMensaje("Cliente " + (estaActivo ? "desactivado" : "activado") + ".", true);
+                    String accionHecha = estaActivo ? "desactivado" : "activado";
+                    mostrarToast("✔  Cliente " + accionHecha, true);
+                    mostrarMensaje("Cliente " + accionHecha + ".", true);
                     cargarTabla(); limpiarFormulario();
                 }
             }
@@ -233,5 +245,40 @@ public class ClienteController {
         lblMensaje.setStyle(ok ? "-fx-text-fill: #2E7D32; -fx-font-size: 12px;"
                                : "-fx-text-fill: #C62828; -fx-font-size: 12px;");
     }
+
+    /**
+     * Toast animado (fade-in → pausa 2.5 s → fade-out).
+     * Requiere un StackPane con fx:id="toastPane" en el FXML raíz.
+     */
+    private void mostrarToast(String mensaje, boolean exito) {
+        if (toastPane == null) return;
+
+        // Label con padding CSS — se auto-dimensiona solo al texto
+        Label toast = new Label(mensaje);
+        toast.setWrapText(false);
+        toast.setStyle(
+            "-fx-font-size: 13px;" +
+            "-fx-font-weight: bold;" +
+            "-fx-text-fill: white;" +
+            "-fx-padding: 10 20 10 20;" +
+            "-fx-background-radius: 18;" +
+            (exito ? "-fx-background-color: #2E7D32;" : "-fx-background-color: #C62828;") +
+            "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.28), 8, 0, 0, 2);"
+        );
+        StackPane.setAlignment(toast, Pos.CENTER);
+
+        toastPane.getChildren().add(toast);
+
+        FadeTransition fadeIn  = new FadeTransition(Duration.millis(200), toast);
+        fadeIn.setFromValue(0); fadeIn.setToValue(1);
+        PauseTransition pausa  = new PauseTransition(Duration.seconds(2.2));
+        FadeTransition fadeOut = new FadeTransition(Duration.millis(350), toast);
+        fadeOut.setFromValue(1); fadeOut.setToValue(0);
+
+        SequentialTransition seq = new SequentialTransition(fadeIn, pausa, fadeOut);
+        seq.setOnFinished(e -> toastPane.getChildren().remove(toast));
+        seq.play();
+    }
+
     private String nvl(String s) { return s == null ? "" : s; }
 }

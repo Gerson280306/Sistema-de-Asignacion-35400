@@ -20,7 +20,7 @@ public class TecnicoDAO {
     }
 
     /**
-     * Lista solo técnicos activos (estado=1), independientemente de su disponibilidad.
+     * Lista solo técnicos activos (estado=1).
      * El algoritmo de asignación verifica disponibilidad horaria por sí mismo.
      */
     public List<Tecnico> listarActivos() {
@@ -63,7 +63,7 @@ public class TecnicoDAO {
         return lista;
     }
 
-    public List<Tecnico> filtrar(int idEspecialidad, int idZona, String disponibilidad) {
+    public List<Tecnico> filtrar(int idEspecialidad, int idZona) {
         List<Tecnico> lista = new ArrayList<>();
         StringBuilder sql = new StringBuilder(
             "SELECT t.*, e.nombre AS nombre_especialidad, z.nombre AS nombre_zona "
@@ -72,8 +72,6 @@ public class TecnicoDAO {
           + "LEFT JOIN tb_zona z ON z.id_zona = t.id_zona WHERE t.estado=1 ");
         if (idEspecialidad > 0) sql.append("AND t.id_especialidad=").append(idEspecialidad).append(" ");
         if (idZona > 0)         sql.append("AND t.id_zona=").append(idZona).append(" ");
-        if (disponibilidad != null && !disponibilidad.isEmpty())
-            sql.append("AND t.disponibilidad='").append(disponibilidad).append("' ");
         sql.append("ORDER BY t.id_tecnico DESC");
         try (PreparedStatement ps = conn().prepareStatement(sql.toString());
              ResultSet rs = ps.executeQuery()) {
@@ -88,8 +86,8 @@ public class TecnicoDAO {
 
     public boolean guardar(Tecnico t) {
         String sql = "INSERT INTO tb_tecnico (dni, nombres, apellidos, telefono, email, "
-                   + "id_especialidad, id_zona, nivel, disponibilidad, max_solicitudes_dia, "
-                   + "observaciones, estado) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)";
+                   + "id_especialidad, id_zona, max_solicitudes_dia, "
+                   + "observaciones, estado) VALUES (?,?,?,?,?,?,?,?,?,?)";
         try (PreparedStatement ps = conn().prepareStatement(sql)) {
             ps.setString(1, t.getDni());
             ps.setString(2, t.getNombres());
@@ -99,11 +97,9 @@ public class TecnicoDAO {
             ps.setInt(6, t.getIdEspecialidad());
             if (t.getIdZona() > 0) ps.setInt(7, t.getIdZona());
             else ps.setNull(7, Types.INTEGER);
-            ps.setString(8, t.getNivel());
-            ps.setString(9, t.getDisponibilidad());
-            ps.setInt(10, t.getMaxSolicitudesDia());
-            ps.setString(11, t.getObservaciones());
-            ps.setInt(12, t.getEstado());
+            ps.setInt(8, t.getMaxSolicitudesDia());
+            ps.setString(9, t.getObservaciones());
+            ps.setInt(10, t.getEstado());
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             System.err.println("[TecnicoDAO] guardar: " + e.getMessage());
@@ -113,7 +109,7 @@ public class TecnicoDAO {
 
     public boolean actualizar(Tecnico t) {
         String sql = "UPDATE tb_tecnico SET dni=?, nombres=?, apellidos=?, telefono=?, "
-                   + "email=?, id_especialidad=?, id_zona=?, nivel=?, disponibilidad=?, "
+                   + "email=?, id_especialidad=?, id_zona=?, "
                    + "max_solicitudes_dia=?, observaciones=?, estado=? WHERE id_tecnico=?";
         try (PreparedStatement ps = conn().prepareStatement(sql)) {
             ps.setString(1, t.getDni());
@@ -124,12 +120,10 @@ public class TecnicoDAO {
             ps.setInt(6, t.getIdEspecialidad());
             if (t.getIdZona() > 0) ps.setInt(7, t.getIdZona());
             else ps.setNull(7, Types.INTEGER);
-            ps.setString(8, t.getNivel());
-            ps.setString(9, t.getDisponibilidad());
-            ps.setInt(10, t.getMaxSolicitudesDia());
-            ps.setString(11, t.getObservaciones());
-            ps.setInt(12, t.getEstado());
-            ps.setInt(13, t.getIdTecnico());
+            ps.setInt(8, t.getMaxSolicitudesDia());
+            ps.setString(9, t.getObservaciones());
+            ps.setInt(10, t.getEstado());
+            ps.setInt(11, t.getIdTecnico());
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             System.err.println("[TecnicoDAO] actualizar: " + e.getMessage());
@@ -235,7 +229,6 @@ public class TecnicoDAO {
      */
     public Map<Integer, List<LocalTime[]>> obtenerOcupacionPorFecha(LocalDate fecha) {
         Map<Integer, List<LocalTime[]>> mapa = new HashMap<>();
-        // Buscamos asignaciones ASIGNADA, EN_CAMINO o EN_PROCESO para esa fecha
         String sql = "SELECT a.id_tecnico, TIME(a.fecha_programada) AS hora_inicio "
                    + "FROM tb_asignacion a "
                    + "WHERE DATE(a.fecha_programada) = ? "
@@ -292,8 +285,6 @@ public class TecnicoDAO {
         t.setNombreEspecialidad(rs.getString("nombre_especialidad"));
         t.setIdZona(rs.getInt("id_zona"));
         t.setNombreZona(rs.getString("nombre_zona"));
-        t.setNivel(rs.getString("nivel"));
-        t.setDisponibilidad(rs.getString("disponibilidad"));
         t.setMaxSolicitudesDia(rs.getInt("max_solicitudes_dia"));
         t.setObservaciones(rs.getString("observaciones"));
         t.setEstado(rs.getInt("estado"));

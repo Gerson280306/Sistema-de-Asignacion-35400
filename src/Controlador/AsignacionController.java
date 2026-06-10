@@ -20,7 +20,14 @@ import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import javafx.animation.FadeTransition;
+import javafx.animation.PauseTransition;
+import javafx.animation.SequentialTransition;
 import javafx.application.Platform;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.layout.StackPane;
+import javafx.util.Duration;
 
 /**
  * Controlador unificado: Asignación automática + Gestión de asignaciones.
@@ -38,6 +45,9 @@ public class AsignacionController {
 
     private final SolicitudDAO  solicitudDAO  = new SolicitudDAO();
     private final TecnicoDAO    tecnicoDAO    = new TecnicoDAO();
+    /** StackPane raíz del FXML — necesario para el toast */
+    @FXML private StackPane toastPane;
+
     private final AsignacionDAO asignacionDAO = new AsignacionDAO();
 
     // ── Encabezado ───────────────────────────────────────────
@@ -158,7 +168,7 @@ public class AsignacionController {
         colHora     .setCellValueFactory(new PropertyValueFactory<>("horarioPreferido"));
         colCliente  .setCellValueFactory(new PropertyValueFactory<>("nombreCliente"));
         colDireccion.setCellValueFactory(d -> new javafx.beans.property.SimpleStringProperty(
-            nvl(d.getValue().getDireccionAtencion(), "")));
+            nvl(d.getValue().getDireccionCliente(), "")));
         colTipo     .setCellValueFactory(new PropertyValueFactory<>("nombreTipo"));
         colTecnico  .setCellValueFactory(new PropertyValueFactory<>("nombreTecnico"));
         colEstado   .setCellValueFactory(new PropertyValueFactory<>("estado"));
@@ -305,7 +315,7 @@ public class AsignacionController {
         esPendiente = "PENDIENTE".equals(estado);
 
         lblSolicitudSeleccionada.setText("#" + sel.getIdSolicitud() + " — " + sel.getNombreTipo());
-        lblDireccionSolicitud.setText("📍 " + nvl(sel.getDireccionAtencion(), "Sin dirección"));
+        lblDireccionSolicitud.setText("📍 " + nvl(sel.getDireccionCliente(), "Sin dirección"));
         String fechaStr = sel.getFechaSolicitada() != null ? sel.getFechaSolicitada().toString() : "Sin fecha";
         lblFechaSolicitud.setText("📅 Fecha: " + fechaStr);
         lblHoraSolicitud.setText("🕐 Hora: " + nvl(sel.getHorarioPreferido(), "No indicada")
@@ -453,11 +463,20 @@ public class AsignacionController {
         }
         pendientes.sort(Comparator.comparingInt((Solicitud s) -> pesoPrioridad(s.getPrioridad())).reversed());
 
-        Map<Integer, List<LocalTime[]>> ocupados = new HashMap<>(
-                tecnicoDAO.obtenerOcupacionPorFecha(LocalDate.now()));
+        // Mapa de ocupación POR FECHA: permite manejar solicitudes de distintos días en el mismo batch.
+        Map<LocalDate, Map<Integer, List<LocalTime[]>>> ocupadosPorFecha = new HashMap<>();
 
         int asignadas = 0, sinDisponible = 0;
         for (Solicitud sol : pendientes) {
+            LocalDate fechaSol = sol.getFechaSolicitada() != null ? sol.getFechaSolicitada() : LocalDate.now();
+
+            // Cargar ocupación real de BD para esa fecha solo la primera vez que aparece
+            if (!ocupadosPorFecha.containsKey(fechaSol)) {
+                ocupadosPorFecha.put(fechaSol,
+                        new HashMap<>(tecnicoDAO.obtenerOcupacionPorFecha(fechaSol)));
+            }
+            Map<Integer, List<LocalTime[]>> ocupados = ocupadosPorFecha.get(fechaSol);
+
             Tecnico elegido = elegirMejorTecnico(sol, ocupados);
             if (elegido == null) { sinDisponible++; continue; }
 
@@ -466,12 +485,13 @@ public class AsignacionController {
             a.setIdSolicitud(sol.getIdSolicitud());
             a.setIdTecnico(elegido.getIdTecnico());
             a.setTipoAsignacion("AUTOMATICA");
-            a.setFechaProgramada(LocalDate.now().atTime(hora != null ? hora : LocalTime.of(8, 0)));
+            a.setFechaProgramada(fechaSol.atTime(hora != null ? hora : LocalTime.of(8, 0)));
             a.setEstadoAsignacion("ASIGNADA");
 
             if (asignacionDAO.guardar(a)) {
                 solicitudDAO.cambiarEstado(sol.getIdSolicitud(), "ASIGNADA");
                 asignadas++;
+                // Acumular bloqueo en el mapa de ESA fecha para las siguientes iteraciones del batch
                 if (hora != null) {
                     ocupados.computeIfAbsent(elegido.getIdTecnico(), k -> new ArrayList<>())
                             .add(new LocalTime[]{hora, hora.plusHours(3)});
@@ -496,6 +516,8 @@ public class AsignacionController {
             msg   = "✅ " + asignadas + " solicitud(es) asignada(s) correctamente.";
             exito = true;
         }
+        // Toast además del label
+        mostrarToast(exito ? "✔  Asignación automática exitosa" : (msg.startsWith("❌") ? "✖  Sin técnicos disponibles" : "⚠  Asignación parcial"), exito);
         mostrarMensaje(msg, exito);
     }
 
@@ -521,6 +543,7 @@ public class AsignacionController {
 
         if (asignacionDAO.guardar(a)) {
             solicitudDAO.cambiarEstado(idSolicitudSeleccionada, "ASIGNADA");
+            mostrarToast("✔  Asignación confirmada", true);
             mostrarMensaje("✅ Asignación confirmada.", true);
         } else {
             mostrarMensaje("❌ Error al guardar la asignación.", false);
@@ -573,4 +596,39 @@ public class AsignacionController {
     }
 
     private String nvl(String s, String def) { return (s == null || s.isBlank()) ? def : s; }
+
+    /**
+     * Toast animado (fade-in → pausa 2.5 s → fade-out).
+     * Requiere un StackPane con fx:id="toastPane" en el FXML raíz.
+     */
+    private void mostrarToast(String mensaje, boolean exito) {
+        if (toastPane == null) return;
+
+        // Label con padding CSS — se auto-dimensiona solo al texto
+        Label toast = new Label(mensaje);
+        toast.setWrapText(false);
+        toast.setStyle(
+            "-fx-font-size: 13px;" +
+            "-fx-font-weight: bold;" +
+            "-fx-text-fill: white;" +
+            "-fx-padding: 10 20 10 20;" +
+            "-fx-background-radius: 18;" +
+            (exito ? "-fx-background-color: #2E7D32;" : "-fx-background-color: #C62828;") +
+            "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.28), 8, 0, 0, 2);"
+        );
+        StackPane.setAlignment(toast, Pos.CENTER);
+
+        toastPane.getChildren().add(toast);
+
+        FadeTransition fadeIn  = new FadeTransition(Duration.millis(200), toast);
+        fadeIn.setFromValue(0); fadeIn.setToValue(1);
+        PauseTransition pausa  = new PauseTransition(Duration.seconds(2.2));
+        FadeTransition fadeOut = new FadeTransition(Duration.millis(350), toast);
+        fadeOut.setFromValue(1); fadeOut.setToValue(0);
+
+        SequentialTransition seq = new SequentialTransition(fadeIn, pausa, fadeOut);
+        seq.setOnFinished(e -> toastPane.getChildren().remove(toast));
+        seq.play();
+    }
+
 }
