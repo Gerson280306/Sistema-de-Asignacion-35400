@@ -7,7 +7,6 @@ public class Tecnico {
     private String nombreEspecialidad;
     private int idZona;
     private String nombreZona;
-    private String nivel, disponibilidad;
     private int maxSolicitudesDia;
     private String observaciones;
     private int estado;
@@ -33,10 +32,6 @@ public class Tecnico {
     public void setIdZona(int v) { idZona = v; }
     public String getNombreZona() { return nombreZona; }
     public void setNombreZona(String v) { nombreZona = v; }
-    public String getNivel() { return nivel; }
-    public void setNivel(String v) { nivel = v; }
-    public String getDisponibilidad() { return disponibilidad; }
-    public void setDisponibilidad(String v) { disponibilidad = v; }
     public int getMaxSolicitudesDia() { return maxSolicitudesDia; }
     public void setMaxSolicitudesDia(int v) { maxSolicitudesDia = v; }
     public String getObservaciones() { return observaciones; }

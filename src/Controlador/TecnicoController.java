@@ -7,9 +7,16 @@ import Modelo.Zona;
 import Conexion.ConexionDB;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.animation.FadeTransition;
+import javafx.animation.PauseTransition;
+import javafx.animation.SequentialTransition;
 import javafx.fxml.FXML;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.StackPane;
+import javafx.util.Duration;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -36,6 +43,9 @@ public class TecnicoController {
                                     chkViernes, chkSabado, chkDomingo;
     @FXML private Spinner<Integer> spMaxAsignaciones;
     @FXML private Button           btnGuardar, btnEliminar;
+
+    /** StackPane raíz del FXML — necesario para el toast */
+    @FXML private StackPane toastPane;
 
     private final TecnicoDAO dao = new TecnicoDAO();
     private Tecnico tecnicoSeleccionado = null;
@@ -231,8 +241,7 @@ public class TecnicoController {
         t.setEmail(txtEmail.getText().trim());
         t.setIdEspecialidad(cmbEspecialidad.getValue().getIdEspecialidad());
         t.setIdZona(cmbDistrito.getValue() != null ? cmbDistrito.getValue().getIdZona() : 0);
-        t.setNivel("JUNIOR");
-        t.setDisponibilidad("DISPONIBLE"); // valor neutro — ya no se gestiona desde aquí
+
         t.setMaxSolicitudesDia(spMaxAsignaciones.getValue());
         t.setObservaciones("");
         t.setEstado(tecnicoSeleccionado == null ? 1 : tecnicoSeleccionado.getEstado());
@@ -261,6 +270,8 @@ public class TecnicoController {
                 };
                 dao.guardarHorario(idFinal, dias, horaInicio, horaFin);
             }
+            // Toast de éxito
+            mostrarToast(tecnicoSeleccionado == null ? "✔  Técnico nuevo registrado" : "✔  Técnico actualizado", true);
             mostrarMensaje(tecnicoSeleccionado == null ? "Técnico registrado." : "Técnico actualizado.", true);
             cargarTabla(); limpiarFormulario();
         } else {
@@ -281,6 +292,7 @@ public class TecnicoController {
             if (bt == ButtonType.YES) {
                 tecnicoSeleccionado.setEstado(activo ? 0 : 1);
                 if (dao.actualizar(tecnicoSeleccionado)) {
+                    mostrarToast("✔  Técnico " + (activo ? "desactivado" : "activado"), true);
                     mostrarMensaje("Técnico " + (activo ? "desactivado" : "activado") + ".", true);
                     cargarTabla(); limpiarFormulario();
                 }
@@ -354,4 +366,39 @@ public class TecnicoController {
         if (h == 19) m = 0;
         return String.format("%02d:%02d", h, m);
     }
+
+    /**
+     * Toast animado (fade-in → pausa 2.5 s → fade-out).
+     * Requiere un StackPane con fx:id="toastPane" en el FXML raíz.
+     */
+    private void mostrarToast(String mensaje, boolean exito) {
+        if (toastPane == null) return;
+
+        // Label con padding CSS — se auto-dimensiona solo al texto
+        Label toast = new Label(mensaje);
+        toast.setWrapText(false);
+        toast.setStyle(
+            "-fx-font-size: 13px;" +
+            "-fx-font-weight: bold;" +
+            "-fx-text-fill: white;" +
+            "-fx-padding: 10 20 10 20;" +
+            "-fx-background-radius: 18;" +
+            (exito ? "-fx-background-color: #2E7D32;" : "-fx-background-color: #C62828;") +
+            "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.28), 8, 0, 0, 2);"
+        );
+        StackPane.setAlignment(toast, Pos.CENTER);
+
+        toastPane.getChildren().add(toast);
+
+        FadeTransition fadeIn  = new FadeTransition(Duration.millis(200), toast);
+        fadeIn.setFromValue(0); fadeIn.setToValue(1);
+        PauseTransition pausa  = new PauseTransition(Duration.seconds(2.2));
+        FadeTransition fadeOut = new FadeTransition(Duration.millis(350), toast);
+        fadeOut.setFromValue(1); fadeOut.setToValue(0);
+
+        SequentialTransition seq = new SequentialTransition(fadeIn, pausa, fadeOut);
+        seq.setOnFinished(e -> toastPane.getChildren().remove(toast));
+        seq.play();
+    }
+
 }

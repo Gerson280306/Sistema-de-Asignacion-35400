@@ -3,15 +3,20 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.geometry.*?>
+<?import javafx.scene.layout.StackPane?>
 
 <!--
     AsignacionView.fxml — MÓDULO UNIFICADO
     Asignación automática (R27-R34) + Gestión de asignaciones (R35-R40)
     Controlador: Controlador.AsignacionController
 -->
-<VBox xmlns="http://javafx.com/javafx/17"
-      xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="Controlador.AsignacionController"
+<StackPane xmlns="http://javafx.com/javafx/17"
+           xmlns:fx="http://javafx.com/fxml/1"
+           fx:controller="Controlador.AsignacionController"
+           fx:id="toastPane"
+           mouseTransparent="false">
+<VBox
+      
       spacing="12"
       style="-fx-background-color: #F0F4F8;"
       VBox.vgrow="ALWAYS">
@@ -170,3 +175,4 @@
         </ScrollPane>
     </HBox>
 </VBox>
+</StackPane>

@@ -3,10 +3,14 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.geometry.*?>
+<?import javafx.scene.layout.StackPane?>
 
-<HBox xmlns="http://javafx.com/javafx/17"
-      xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="Controlador.SolicitudController"
+<StackPane xmlns="http://javafx.com/javafx/17"
+           xmlns:fx="http://javafx.com/fxml/1"
+           fx:controller="Controlador.SolicitudController"
+           fx:id="toastPane">
+<HBox
+      
       spacing="16"
       style="-fx-background-color: #F0F4F8;"
       HBox.hgrow="ALWAYS">
@@ -219,3 +223,4 @@
     </VBox>
 
 </HBox>
+</StackPane>

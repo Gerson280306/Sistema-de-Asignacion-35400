@@ -3,6 +3,7 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.geometry.*?>
+<?import javafx.scene.layout.StackPane?>
 
 <!--
     ClienteView.fxml
@@ -17,10 +18,11 @@
       R6  Registrar dirección cliente
       R7  Asignar ubicación
 -->
-<HBox xmlns="http://javafx.com/javafx/17"
-      xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="Controlador.ClienteController"
-      spacing="16"
+<StackPane xmlns="http://javafx.com/javafx/17"
+           xmlns:fx="http://javafx.com/fxml/1"
+           fx:controller="Controlador.ClienteController"
+           fx:id="toastPane">
+<HBox spacing="16"
       style="-fx-background-color: #F0F4F8;"
       HBox.hgrow="ALWAYS">
 
@@ -238,3 +240,4 @@
     </VBox>
 
 </HBox>
+</StackPane>
