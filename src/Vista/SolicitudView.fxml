@@ -3,10 +3,14 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.geometry.*?>
+<?import javafx.scene.layout.StackPane?>
 
-<HBox xmlns="http://javafx.com/javafx/17"
-      xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="Controlador.SolicitudController"
+<StackPane xmlns="http://javafx.com/javafx/17"
+           xmlns:fx="http://javafx.com/fxml/1"
+           fx:controller="Controlador.SolicitudController"
+           fx:id="toastPane">
+<HBox
+      
       spacing="16"
       style="-fx-background-color: #F0F4F8;"
       HBox.hgrow="ALWAYS">
@@ -102,9 +106,26 @@
                               styleClass="combo-box"/>
                 </VBox>
 
-                <!-- Fecha -->
+                <!-- Tipo -->
                 <VBox spacing="5">
-                    <Label text="FECHA DE SOLICITUD" styleClass="label-field"/>
+                    <Label text="TIPO / CLASIFICACIÓN" styleClass="label-field"/>
+                    <ComboBox fx:id="cmbTipo"
+                              promptText="Seleccionar tipo"
+                              prefWidth="1000"
+                              styleClass="combo-box"/>
+                </VBox>
+
+                <!-- Prioridad -->
+                <VBox spacing="5">
+                    <Label text="PRIORIDAD" styleClass="label-field"/>
+                    <ComboBox fx:id="cmbPrioridad"
+                              prefWidth="1000"
+                              styleClass="combo-box"/>
+                </VBox>
+
+                <!-- Fecha del servicio -->
+                <VBox spacing="5">
+                    <Label text="FECHA DEL SERVICIO" styleClass="label-field"/>
                     <DatePicker fx:id="dpFechaSolicitud" prefWidth="1000"/>
                 </VBox>
 
@@ -145,23 +166,6 @@
                     <Label fx:id="lblDisponibilidad" text=""
                            wrapText="true"
                            style="-fx-font-size: 12px;"/>
-                </VBox>
-
-                <!-- Tipo -->
-                <VBox spacing="5">
-                    <Label text="TIPO / CLASIFICACIÓN" styleClass="label-field"/>
-                    <ComboBox fx:id="cmbTipo"
-                              promptText="Seleccionar tipo"
-                              prefWidth="1000"
-                              styleClass="combo-box"/>
-                </VBox>
-
-                <!-- Prioridad -->
-                <VBox spacing="5">
-                    <Label text="PRIORIDAD" styleClass="label-field"/>
-                    <ComboBox fx:id="cmbPrioridad"
-                              prefWidth="1000"
-                              styleClass="combo-box"/>
                 </VBox>
 
                 <!-- Descripción -->
@@ -219,3 +223,4 @@
     </VBox>
 
 </HBox>
+</StackPane>

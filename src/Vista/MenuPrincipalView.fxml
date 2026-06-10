@@ -127,9 +127,9 @@
                        style="-fx-background-color: #F0F4F8; -fx-padding: 24;">
 
                 <!-- Dashboard por defecto -->
-                <ScrollPane fitToWidth="true"
+                <ScrollPane fitToWidth="true" fitToHeight="true" VBox.vgrow="ALWAYS"
                             style="-fx-background-color: transparent; -fx-background: transparent; -fx-border-color: transparent;">
-                    <VBox spacing="20">
+                    <VBox spacing="20" VBox.vgrow="ALWAYS">
 
                         <HBox spacing="16">
                             <VBox styleClass="card" HBox.hgrow="ALWAYS" spacing="6">
@@ -148,10 +148,10 @@
                                 <Label text="TÉCNICOS DISPONIBLES" styleClass="label-field"/>
                                 <Label fx:id="kpiTecnicos" text="—"
                                        style="-fx-font-size: 32px; -fx-font-weight: bold; -fx-text-fill: #2E7D32;"/>
-                                <Label text="Activos y libres" styleClass="label-subtitle"/>
+                                <Label text="Técnicos activos" styleClass="label-subtitle"/>
                             </VBox>
                             <VBox styleClass="card" HBox.hgrow="ALWAYS" spacing="6">
-                                <Label text="ASIGNACIONES HOY" styleClass="label-field"/>
+                                <Label text="SOLICITUDES COMPLETADAS" styleClass="label-field"/>
                                 <Label fx:id="kpiAsignaciones" text="—"
                                        style="-fx-font-size: 32px; -fx-font-weight: bold; -fx-text-fill: #1565C0;"/>
                                 <Label text="Completadas / Total" styleClass="label-subtitle"/>
@@ -175,7 +175,7 @@
                             </VBox>
                         </HBox>
 
-                        <VBox styleClass="card" spacing="12">
+                        <VBox styleClass="card" VBox.vgrow="ALWAYS" spacing="12">
                             <HBox alignment="CENTER_LEFT">
                                 <Label text="Últimas solicitudes" styleClass="label-section"
                                        HBox.hgrow="ALWAYS"/>
@@ -184,15 +184,18 @@
                                         onAction="#mostrarSolicitudes"/>
                             </HBox>
                             <TableView fx:id="tblUltimasSolicitudes"
-                                       prefHeight="200"
+                                       VBox.vgrow="ALWAYS"
                                        styleClass="table-view">
                                 <columns>
-                                    <TableColumn fx:id="colIdSol"       text="ID"               prefWidth="60"/>
-                                    <TableColumn fx:id="colClienteSol"  text="Cliente"           prefWidth="180"/>
-                                    <TableColumn fx:id="colFechaSol"    text="Fecha"             prefWidth="130"/>
-                                    <TableColumn fx:id="colPrioridadSol" text="Prioridad"        prefWidth="100"/>
-                                    <TableColumn fx:id="colEstadoSol"   text="Estado"            prefWidth="120"/>
-                                    <TableColumn fx:id="colTecnicoSol"  text="Técnico asignado"  prefWidth="180"/>
+                                    <TableColumn fx:id="colIdSol"        text="ID"               prefWidth="45"  style="-fx-alignment: CENTER;"/>
+                                    <TableColumn fx:id="colClienteSol"   text="Cliente"           prefWidth="140" style="-fx-alignment: CENTER;"/>
+                                    <TableColumn fx:id="colFechaSol"     text="Fecha"             prefWidth="95"  style="-fx-alignment: CENTER;"/>
+                                    <TableColumn fx:id="colHoraSol"      text="Hora"              prefWidth="65"  style="-fx-alignment: CENTER;"/>
+                                    <TableColumn fx:id="colDireccionSol" text="Dirección"         prefWidth="150" style="-fx-alignment: CENTER;"/>
+                                    <TableColumn fx:id="colTipoSol"      text="Tipo"              prefWidth="110" style="-fx-alignment: CENTER;"/>
+                                    <TableColumn fx:id="colTecnicoSol"   text="Técnico asignado"  prefWidth="140" style="-fx-alignment: CENTER;"/>
+                                    <TableColumn fx:id="colEstadoSol"    text="Estado"            prefWidth="110" style="-fx-alignment: CENTER;"/>
+                                    <TableColumn fx:id="colPrioridadSol" text="Prioridad"         prefWidth="90"  style="-fx-alignment: CENTER;"/>
                                 </columns>
                                 <placeholder>
                                     <Label text="No hay solicitudes recientes" styleClass="label-subtitle"/>

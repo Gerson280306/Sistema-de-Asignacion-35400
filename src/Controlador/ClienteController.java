@@ -4,21 +4,23 @@ import DAO.ClienteDAO;
 import Modelo.Cliente;
 import Modelo.Zona;
 import Conexion.ConexionDB;
+import javafx.animation.FadeTransition;
+import javafx.animation.PauseTransition;
+import javafx.animation.SequentialTransition;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.StackPane;
+import javafx.util.Duration;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
 public class ClienteController {
-
-    // Distritos disponibles (deben existir en tb_zona)
-    private static final String[] NOMBRES_DISTRITO = {
-        "San Bartolo", "Punta Negra", "Punta Hermoso", "Pucusana"
-    };
 
     @FXML private TextField txtBuscar;
     @FXML private ComboBox<String> cmbFiltroEstado;
@@ -32,6 +34,8 @@ public class ClienteController {
     @FXML private ComboBox<Zona> cmbDistrito;
     @FXML private TextArea txtReferencia;
     @FXML private Button btnGuardar, btnEliminar;
+
+    @FXML private StackPane toastPane;
 
     private final ClienteDAO dao = new ClienteDAO();
     private Cliente clienteSeleccionado = null;
@@ -55,15 +59,29 @@ public class ClienteController {
         btnEliminar.setDisable(true);
         btnGuardar.setDisable(true);
 
+        // DNI: solo dígitos
         txtDni.textProperty().addListener((o, v, n) -> {
             if (!n.matches("\\d*")) txtDni.setText(n.replaceAll("[^\\d]",""));
             validarEnTiempoReal();
         });
+        // Teléfono: solo dígitos, exactamente 9
         txtTelefono.textProperty().addListener((o, v, n) -> {
-            if (!n.matches("[\\d ]*")) txtTelefono.setText(n.replaceAll("[^\\d ]",""));
+            if (!n.matches("\\d*")) txtTelefono.setText(n.replaceAll("[^\\d]",""));
+            validarEnTiempoReal();
         });
-        txtNombres.textProperty().addListener((o, v, n) -> validarEnTiempoReal());
-        txtApellidos.textProperty().addListener((o, v, n) -> validarEnTiempoReal());
+        // Nombres y apellidos: solo letras y espacios
+        txtNombres.textProperty().addListener((o, v, n) -> {
+            if (!n.matches("[a-zA-ZáéíóúÁÉÍÓÚñÑ ]*"))
+                txtNombres.setText(v);
+            validarEnTiempoReal();
+        });
+        txtApellidos.textProperty().addListener((o, v, n) -> {
+            if (!n.matches("[a-zA-ZáéíóúÁÉÍÓÚñÑ ]*"))
+                txtApellidos.setText(v);
+            validarEnTiempoReal();
+        });
+        txtDireccion.textProperty().addListener((o, v, n) -> validarEnTiempoReal());
+        txtEmail.textProperty().addListener((o, v, n) -> validarEnTiempoReal());
 
         cargarDistritos();
         cargarTabla();
@@ -92,11 +110,9 @@ public class ClienteController {
         aplicarFiltros();
     }
 
-    @FXML public void nuevoCliente() { limpiarFormulario(); }
-
-    @FXML public void buscarCliente() { aplicarFiltros(); }
-
-    @FXML public void filtrarEstado() { aplicarFiltros(); }
+    @FXML public void nuevoCliente()   { limpiarFormulario(); }
+    @FXML public void buscarCliente()  { aplicarFiltros(); }
+    @FXML public void filtrarEstado()  { aplicarFiltros(); }
 
     private void aplicarFiltros() {
         String txt    = txtBuscar.getText().trim().toLowerCase();
@@ -110,11 +126,9 @@ public class ClienteController {
                 || (c.getTelefono()  != null && c.getTelefono().contains(txt))
                 || (c.getEmail()     != null && c.getEmail().toLowerCase().contains(txt))
                 || (c.getDireccion() != null && c.getDireccion().toLowerCase().contains(txt));
-
             boolean okEstado = estado == null || "Todos".equals(estado)
                 || ("Activo".equals(estado)   && c.getEstado() == 1)
                 || ("Inactivo".equals(estado) && c.getEstado() == 0);
-
             if (okTexto && okEstado) filtrados.add(c);
         }
         tblClientes.setItems(filtrados);
@@ -137,7 +151,6 @@ public class ClienteController {
         txtDireccion.setText(nvl(sel.getDireccion()));
         txtReferencia.setText(nvl(sel.getReferencia()));
 
-        // Seleccionar distrito por id_zona
         cmbDistrito.getItems().stream()
             .filter(z -> z.getIdZona() == sel.getIdZona())
             .findFirst().ifPresent(cmbDistrito::setValue);
@@ -159,7 +172,8 @@ public class ClienteController {
         c.setEstado(clienteSeleccionado == null ? 1 : clienteSeleccionado.getEstado());
 
         boolean ok;
-        if (clienteSeleccionado == null) {
+        boolean esNuevo = (clienteSeleccionado == null);
+        if (esNuevo) {
             if (dao.existeDni(c.getDni(), 0)) { mostrarMensaje("El DNI/RUC ya está registrado.", false); return; }
             ok = dao.guardar(c);
         } else {
@@ -168,24 +182,29 @@ public class ClienteController {
             ok = dao.actualizar(c);
         }
         if (ok) {
-            mostrarMensaje(clienteSeleccionado == null ? "Cliente registrado." : "Cliente actualizado.", true);
+            mostrarToast(esNuevo ? "✔  Cliente nuevo registrado" : "✔  Cliente actualizado", true);
+            mostrarMensaje(esNuevo ? "Cliente registrado." : "Cliente actualizado.", true);
             cargarTabla(); limpiarFormulario();
-        } else mostrarMensaje("Error al guardar.", false);
+        } else {
+            mostrarMensaje("Error al guardar.", false);
+        }
     }
 
     @FXML public void eliminarCliente() {
         if (clienteSeleccionado == null) return;
         boolean estaActivo = clienteSeleccionado.getEstado() == 1;
-        String accion = estaActivo ? "desactivar" : "activar";
         Alert a = new Alert(Alert.AlertType.CONFIRMATION,
-            "¿Deseas " + accion + " a " + clienteSeleccionado.getNombreCompleto() + "?",
+            "¿Deseas " + (estaActivo ? "desactivar" : "activar")
+            + " a " + clienteSeleccionado.getNombreCompleto() + "?",
             ButtonType.YES, ButtonType.NO);
         a.setHeaderText(null); a.setTitle("Confirmar");
         a.showAndWait().ifPresent(bt -> {
             if (bt == ButtonType.YES) {
                 clienteSeleccionado.setEstado(estaActivo ? 0 : 1);
                 if (dao.actualizar(clienteSeleccionado)) {
-                    mostrarMensaje("Cliente " + (estaActivo ? "desactivado" : "activado") + ".", true);
+                    String accionHecha = estaActivo ? "desactivado" : "activado";
+                    mostrarToast("✔  Cliente " + accionHecha, true);
+                    mostrarMensaje("Cliente " + accionHecha + ".", true);
                     cargarTabla(); limpiarFormulario();
                 }
             }
@@ -217,14 +236,33 @@ public class ClienteController {
     private String validarCompleto() {
         String dni = txtDni.getText().trim();
         if (dni.isEmpty()) return "El DNI/RUC es obligatorio.";
-        if (!dni.matches("\\d{8}") && !dni.matches("\\d{11}")) return "DNI: 8 dígitos, RUC: 11 dígitos.";
-        if (txtNombres.getText().trim().isEmpty())   return "Los nombres son obligatorios.";
-        if (txtApellidos.getText().trim().isEmpty()) return "Los apellidos son obligatorios.";
+        if (!dni.matches("\\d{8}") && !dni.matches("\\d{11}"))
+            return "DNI: 8 dígitos, RUC: 11 dígitos.";
+
+        String nombres = txtNombres.getText().trim();
+        if (nombres.isEmpty()) return "Los nombres son obligatorios.";
+        if (nombres.length() < 3) return "Los nombres deben tener al menos 3 caracteres.";
+        if (!nombres.matches("[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+"))
+            return "Los nombres solo deben contener letras.";
+
+        String apellidos = txtApellidos.getText().trim();
+        if (apellidos.isEmpty()) return "Los apellidos son obligatorios.";
+        if (apellidos.length() < 3) return "Los apellidos deben tener al menos 3 caracteres.";
+        if (!apellidos.matches("[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+"))
+            return "Los apellidos solo deben contener letras.";
+
+        String tel = txtTelefono.getText().trim();
+        if (!tel.isEmpty() && !tel.matches("\\d{9}"))
+            return "El teléfono debe tener exactamente 9 dígitos.";
+
+        String dir = txtDireccion.getText().trim();
+        if (!dir.isEmpty() && dir.length() < 5)
+            return "La dirección debe tener al menos 5 caracteres.";
+
         String email = txtEmail.getText().trim();
-        if (!email.isEmpty() && !email.matches("^[\\w._%+\\-]+@[\\w.\\-]+\\.[a-zA-Z]{2,}$"))
-            return "El correo no tiene formato válido.";
-        String tel = txtTelefono.getText().replaceAll(" ","");
-        if (!tel.isEmpty() && tel.length() < 7) return "El teléfono debe tener al menos 7 dígitos.";
+        if (!email.isEmpty() && !email.matches("^[\\w._%+\\-]+@gmail\\.com$"))
+            return "El correo debe terminar en @gmail.com.";
+
         return null;
     }
 
@@ -233,5 +271,28 @@ public class ClienteController {
         lblMensaje.setStyle(ok ? "-fx-text-fill: #2E7D32; -fx-font-size: 12px;"
                                : "-fx-text-fill: #C62828; -fx-font-size: 12px;");
     }
+
+    private void mostrarToast(String mensaje, boolean exito) {
+        if (toastPane == null) return;
+        Label toast = new Label(mensaje);
+        toast.setWrapText(false);
+        toast.setStyle(
+            "-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: white;" +
+            "-fx-padding: 10 20 10 20; -fx-background-radius: 18;" +
+            (exito ? "-fx-background-color: #2E7D32;" : "-fx-background-color: #C62828;") +
+            "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.28), 8, 0, 0, 2);"
+        );
+        StackPane.setAlignment(toast, Pos.CENTER);
+        toastPane.getChildren().add(toast);
+        FadeTransition fadeIn  = new FadeTransition(Duration.millis(200), toast);
+        fadeIn.setFromValue(0); fadeIn.setToValue(1);
+        PauseTransition pausa  = new PauseTransition(Duration.seconds(2.2));
+        FadeTransition fadeOut = new FadeTransition(Duration.millis(350), toast);
+        fadeOut.setFromValue(1); fadeOut.setToValue(0);
+        SequentialTransition seq = new SequentialTransition(fadeIn, pausa, fadeOut);
+        seq.setOnFinished(e -> toastPane.getChildren().remove(toast));
+        seq.play();
+    }
+
     private String nvl(String s) { return s == null ? "" : s; }
 }

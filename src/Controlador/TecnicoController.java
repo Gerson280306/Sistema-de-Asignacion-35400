@@ -7,9 +7,16 @@ import Modelo.Zona;
 import Conexion.ConexionDB;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.animation.FadeTransition;
+import javafx.animation.PauseTransition;
+import javafx.animation.SequentialTransition;
 import javafx.fxml.FXML;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.StackPane;
+import javafx.util.Duration;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -17,7 +24,6 @@ import java.util.List;
 
 public class TecnicoController {
 
-    // ── Tabla + filtros ──────────────────────────────────────
     @FXML private TextField txtBuscar;
     @FXML private ComboBox<Especialidad> cmbFiltroEspecialidad;
     @FXML private ComboBox<Zona>         cmbFiltroDistrito;
@@ -26,7 +32,6 @@ public class TecnicoController {
     @FXML private TableColumn<Tecnico,String>  colDni, colNombre, colEspecialidad, colDistrito, colEstado;
     @FXML private Label lblContador, lblDisponibles, lblTituloForm, lblMensaje;
 
-    // ── Formulario (sin cmbDisponibilidad) ───────────────────
     @FXML private TextField        txtDni, txtNombres, txtApellidos, txtTelefono, txtEmail;
     @FXML private ComboBox<Especialidad> cmbEspecialidad;
     @FXML private ComboBox<Zona>         cmbDistrito;
@@ -37,11 +42,12 @@ public class TecnicoController {
     @FXML private Spinner<Integer> spMaxAsignaciones;
     @FXML private Button           btnGuardar, btnEliminar;
 
+    @FXML private StackPane toastPane;
+
     private final TecnicoDAO dao = new TecnicoDAO();
     private Tecnico tecnicoSeleccionado = null;
     private ObservableList<Tecnico> todosLosTecnicos = FXCollections.observableArrayList();
 
-    // ════════════════════════════════════════════════════════
     @FXML
     public void initialize() {
         colId          .setCellValueFactory(new PropertyValueFactory<>("idTecnico"));
@@ -99,15 +105,28 @@ public class TecnicoController {
         btnFin1700.setOnAction(e ->   { txtFinHH.setText("17");   txtFinMM.setText("00"); });
         btnFin1800.setOnAction(e ->   { txtFinHH.setText("18");   txtFinMM.setText("00"); });
 
+        // DNI: solo dígitos
         txtDni.textProperty().addListener((o, v, n) -> {
             if (!n.matches("\\d*")) txtDni.setText(n.replaceAll("[^\\d]",""));
             validarEnTiempoReal();
         });
+        // Teléfono: solo dígitos, exactamente 9
         txtTelefono.textProperty().addListener((o, v, n) -> {
-            if (!n.matches("[\\d ]*")) txtTelefono.setText(n.replaceAll("[^\\d ]",""));
+            if (!n.matches("\\d*")) txtTelefono.setText(n.replaceAll("[^\\d]",""));
+            validarEnTiempoReal();
         });
-        txtNombres.textProperty().addListener((o, v, n)   -> validarEnTiempoReal());
-        txtApellidos.textProperty().addListener((o, v, n) -> validarEnTiempoReal());
+        // Nombres y apellidos: solo letras y espacios
+        txtNombres.textProperty().addListener((o, v, n) -> {
+            if (!n.matches("[a-zA-ZáéíóúÁÉÍÓÚñÑ ]*"))
+                txtNombres.setText(v);
+            validarEnTiempoReal();
+        });
+        txtApellidos.textProperty().addListener((o, v, n) -> {
+            if (!n.matches("[a-zA-ZáéíóúÁÉÍÓÚñÑ ]*"))
+                txtApellidos.setText(v);
+            validarEnTiempoReal();
+        });
+        txtEmail.textProperty().addListener((o, v, n) -> validarEnTiempoReal());
         cmbEspecialidad.valueProperty().addListener((o, v, n) -> validarEnTiempoReal());
 
         cargarEspecialidades();
@@ -124,7 +143,6 @@ public class TecnicoController {
         );
     }
 
-    // ── Carga de combos ──────────────────────────────────────
     private void cargarEspecialidades() {
         List<Especialidad> lista = new ArrayList<>();
         try (PreparedStatement ps = ConexionDB.getInstancia().getConexion()
@@ -152,19 +170,18 @@ public class TecnicoController {
         cmbFiltroDistrito.setItems(items);
     }
 
-    // ── Tabla ────────────────────────────────────────────────
     private void cargarTabla() {
         todosLosTecnicos = FXCollections.observableArrayList(dao.listarTodos());
         aplicarFiltros();
     }
 
-    @FXML public void nuevoTecnico()   { limpiarFormulario(); }
-    @FXML public void buscarTecnico()  { aplicarFiltros(); }
-    @FXML public void filtrar()        { aplicarFiltros(); }
+    @FXML public void nuevoTecnico()  { limpiarFormulario(); }
+    @FXML public void buscarTecnico() { aplicarFiltros(); }
+    @FXML public void filtrar()       { aplicarFiltros(); }
 
     private void aplicarFiltros() {
-        String     txt  = txtBuscar.getText().trim().toLowerCase();
-        Especialidad esp = cmbFiltroEspecialidad.getValue();
+        String       txt  = txtBuscar.getText().trim().toLowerCase();
+        Especialidad esp  = cmbFiltroEspecialidad.getValue();
         Zona         dist = cmbFiltroDistrito.getValue();
 
         ObservableList<Tecnico> filtrados = FXCollections.observableArrayList();
@@ -180,11 +197,9 @@ public class TecnicoController {
         }
         tblTecnicos.setItems(filtrados);
         lblContador.setText(filtrados.size() + " técnicos");
-        // lblDisponibles queda vacío — disponibilidad ya no se gestiona aquí
         if (lblDisponibles != null) lblDisponibles.setText("");
     }
 
-    // ── Selección ────────────────────────────────────────────
     @FXML public void seleccionarTecnico() {
         Tecnico sel = tblTecnicos.getSelectionModel().getSelectedItem();
         if (sel == null) return;
@@ -218,7 +233,6 @@ public class TecnicoController {
         if (horas[1].contains(":")) { txtFinHH.setText(horas[1].split(":")[0]);    txtFinMM.setText(horas[1].split(":")[1]); }
     }
 
-    // ── Guardar ──────────────────────────────────────────────
     @FXML public void guardarTecnico() {
         String error = validarCompleto();
         if (error != null) { mostrarMensaje(error, false); return; }
@@ -231,8 +245,6 @@ public class TecnicoController {
         t.setEmail(txtEmail.getText().trim());
         t.setIdEspecialidad(cmbEspecialidad.getValue().getIdEspecialidad());
         t.setIdZona(cmbDistrito.getValue() != null ? cmbDistrito.getValue().getIdZona() : 0);
-        t.setNivel("JUNIOR");
-        t.setDisponibilidad("DISPONIBLE"); // valor neutro — ya no se gestiona desde aquí
         t.setMaxSolicitudesDia(spMaxAsignaciones.getValue());
         t.setObservaciones("");
         t.setEstado(tecnicoSeleccionado == null ? 1 : tecnicoSeleccionado.getEstado());
@@ -261,6 +273,7 @@ public class TecnicoController {
                 };
                 dao.guardarHorario(idFinal, dias, horaInicio, horaFin);
             }
+            mostrarToast(tecnicoSeleccionado == null ? "✔  Técnico nuevo registrado" : "✔  Técnico actualizado", true);
             mostrarMensaje(tecnicoSeleccionado == null ? "Técnico registrado." : "Técnico actualizado.", true);
             cargarTabla(); limpiarFormulario();
         } else {
@@ -268,7 +281,6 @@ public class TecnicoController {
         }
     }
 
-    // ── Eliminar / Activar ───────────────────────────────────
     @FXML public void eliminarTecnico() {
         if (tecnicoSeleccionado == null) return;
         boolean activo = tecnicoSeleccionado.getEstado() == 1;
@@ -281,6 +293,7 @@ public class TecnicoController {
             if (bt == ButtonType.YES) {
                 tecnicoSeleccionado.setEstado(activo ? 0 : 1);
                 if (dao.actualizar(tecnicoSeleccionado)) {
+                    mostrarToast("✔  Técnico " + (activo ? "desactivado" : "activado"), true);
                     mostrarMensaje("Técnico " + (activo ? "desactivado" : "activado") + ".", true);
                     cargarTabla(); limpiarFormulario();
                 }
@@ -288,7 +301,6 @@ public class TecnicoController {
         });
     }
 
-    // ── Limpiar ──────────────────────────────────────────────
     @FXML public void limpiarFormulario() {
         tecnicoSeleccionado = null;
         txtDni.clear(); txtNombres.clear(); txtApellidos.clear();
@@ -305,7 +317,6 @@ public class TecnicoController {
         tblTecnicos.getSelectionModel().clearSelection();
     }
 
-    // ── Privados ─────────────────────────────────────────────
     private void actualizarBoton(boolean activo) {
         if (activo) {
             btnEliminar.setText("Desactivar");
@@ -318,13 +329,29 @@ public class TecnicoController {
 
     private String validarCompleto() {
         String dni = txtDni.getText().trim();
-        if (dni.isEmpty())           return "El DNI es obligatorio.";
-        if (!dni.matches("\\d{8}"))  return "El DNI debe tener exactamente 8 dígitos.";
-        if (txtNombres.getText().trim().isEmpty())   return "Los nombres son obligatorios.";
-        if (txtApellidos.getText().trim().isEmpty()) return "Los apellidos son obligatorios.";
+        if (dni.isEmpty())          return "El DNI es obligatorio.";
+        if (!dni.matches("\\d{8}")) return "El DNI debe tener exactamente 8 dígitos.";
+
+        String nombres = txtNombres.getText().trim();
+        if (nombres.isEmpty()) return "Los nombres son obligatorios.";
+        if (nombres.length() < 3) return "Los nombres deben tener al menos 3 caracteres.";
+        if (!nombres.matches("[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+"))
+            return "Los nombres solo deben contener letras.";
+
+        String apellidos = txtApellidos.getText().trim();
+        if (apellidos.isEmpty()) return "Los apellidos son obligatorios.";
+        if (apellidos.length() < 3) return "Los apellidos deben tener al menos 3 caracteres.";
+        if (!apellidos.matches("[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+"))
+            return "Los apellidos solo deben contener letras.";
+
+        String tel = txtTelefono.getText().trim();
+        if (!tel.isEmpty() && !tel.matches("\\d{9}"))
+            return "El teléfono debe tener exactamente 9 dígitos.";
+
         String email = txtEmail.getText().trim();
-        if (!email.isEmpty() && !email.matches("^[\\w._%+\\-]+@[\\w.\\-]+\\.[a-zA-Z]{2,}$"))
-            return "El correo no tiene formato válido.";
+        if (!email.isEmpty() && !email.matches("^[\\w._%+\\-]+@gmail\\.com$"))
+            return "El correo debe terminar en @gmail.com.";
+
         if (cmbEspecialidad.getValue() == null) return "Selecciona la especialidad.";
         return null;
     }
@@ -334,7 +361,6 @@ public class TecnicoController {
         lblMensaje.setStyle(ok ? "-fx-text-fill: #2E7D32; -fx-font-size: 12px;"
                                : "-fx-text-fill: #C62828; -fx-font-size: 12px;");
     }
-    private String nvl(String s) { return s == null ? "" : s; }
 
     private int obtenerIdPorDni(String dni) {
         try (PreparedStatement ps = ConexionDB.getInstancia().getConexion()
@@ -354,4 +380,28 @@ public class TecnicoController {
         if (h == 19) m = 0;
         return String.format("%02d:%02d", h, m);
     }
+
+    private void mostrarToast(String mensaje, boolean exito) {
+        if (toastPane == null) return;
+        Label toast = new Label(mensaje);
+        toast.setWrapText(false);
+        toast.setStyle(
+            "-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: white;" +
+            "-fx-padding: 10 20 10 20; -fx-background-radius: 18;" +
+            (exito ? "-fx-background-color: #2E7D32;" : "-fx-background-color: #C62828;") +
+            "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.28), 8, 0, 0, 2);"
+        );
+        StackPane.setAlignment(toast, Pos.CENTER);
+        toastPane.getChildren().add(toast);
+        FadeTransition fadeIn  = new FadeTransition(Duration.millis(200), toast);
+        fadeIn.setFromValue(0); fadeIn.setToValue(1);
+        PauseTransition pausa  = new PauseTransition(Duration.seconds(2.2));
+        FadeTransition fadeOut = new FadeTransition(Duration.millis(350), toast);
+        fadeOut.setFromValue(1); fadeOut.setToValue(0);
+        SequentialTransition seq = new SequentialTransition(fadeIn, pausa, fadeOut);
+        seq.setOnFinished(e -> toastPane.getChildren().remove(toast));
+        seq.play();
+    }
+
+    private String nvl(String s) { return s == null ? "" : s; }
 }

@@ -9,13 +9,18 @@ import Modelo.TipoServicio;
 import Conexion.ConexionDB;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.animation.FadeTransition;
+import javafx.animation.PauseTransition;
+import javafx.animation.SequentialTransition;
 import javafx.fxml.FXML;
+import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.StackPane;
+import javafx.util.Duration;
 
 import java.sql.*;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,17 +38,19 @@ public class SolicitudController {
     @FXML private Label lblContador, lblTituloForm, lblMensaje;
     @FXML private Label lblDisponibilidad;
 
-    // ── Formulario (sin cmbEstado) ───────────────────────────
+    // ── Formulario — orden: Cliente, Tipo, Prioridad, Fecha del servicio, Hora, Descripcion, Observaciones
     @FXML private ComboBox<Cliente>      cmbCliente;
     @FXML private ComboBox<TipoServicio> cmbTipo;
     @FXML private ComboBox<String>       cmbPrioridad;
-    @FXML private DatePicker             dpFechaSolicitud;
+    @FXML private DatePicker             dpFechaSolicitud;   // label en FXML: "Fecha del servicio"
     @FXML private TextField              txtHoraHH, txtHoraMM;
     @FXML private TextArea               txtDescripcion, txtObservaciones;
     @FXML private Button                 btnGuardar, btnCancelarSolicitud;
 
-    private final SolicitudDAO dao = new SolicitudDAO();
-    private final TecnicoDAO tecnicoDAO = new TecnicoDAO();
+    @FXML private StackPane toastPane;
+
+    private final SolicitudDAO dao        = new SolicitudDAO();
+    private final TecnicoDAO   tecnicoDAO = new TecnicoDAO();
     private Solicitud solicitudSeleccionada = null;
     private ObservableList<Solicitud> todasLasSolicitudes = FXCollections.observableArrayList();
 
@@ -61,14 +68,14 @@ public class SolicitudController {
         colPrioridad.setCellValueFactory(new PropertyValueFactory<>("prioridad"));
         colEstado.setCellValueFactory(new PropertyValueFactory<>("estado"));
 
-        // Combos formulario — solo PENDIENTE al crear; TERMINADO se pone automáticamente
+        // Combos
         cmbPrioridad.setItems(FXCollections.observableArrayList("BAJA","MEDIA","ALTA","CRITICA"));
         cmbPrioridad.setValue("MEDIA");
         dpFechaSolicitud.setValue(LocalDate.now());
         btnCancelarSolicitud.setDisable(true);
         btnGuardar.setDisable(true);
 
-        // Bloquear fechas pasadas en DatePicker
+        // Bloquear fechas pasadas y más de 2 meses en DatePicker
         dpFechaSolicitud.setDayCellFactory(picker -> new DateCell() {
             @Override public void updateItem(LocalDate date, boolean empty) {
                 super.updateItem(date, empty);
@@ -77,7 +84,7 @@ public class SolicitudController {
             }
         });
 
-        // Hora — solo dígitos con validación
+        // Hora — solo dígitos
         if (txtHoraHH != null) {
             txtHoraHH.setText("08"); txtHoraMM.setText("00");
             txtHoraHH.textProperty().addListener((o, v, n) -> {
@@ -92,19 +99,18 @@ public class SolicitudController {
             });
         }
 
-        cmbCliente.valueProperty().addListener((o, v, n)  -> validarEnTiempoReal());
-        cmbTipo.valueProperty().addListener((o, v, n)     -> validarEnTiempoReal());
-        cmbPrioridad.valueProperty().addListener((o, v, n)-> validarEnTiempoReal());
+        cmbCliente.valueProperty().addListener((o, v, n)       -> validarEnTiempoReal());
+        // Al cambiar tipo: validar especialidad disponible + disponibilidad general
+        cmbTipo.valueProperty().addListener((o, v, n)          -> { verificarEspecialidadTipo(n); validarEnTiempoReal(); });
+        cmbPrioridad.valueProperty().addListener((o, v, n)     -> validarEnTiempoReal());
         dpFechaSolicitud.valueProperty().addListener((o, v, n) -> validarEnTiempoReal());
 
-        // Filtro de estado
+        // Filtro estado
         cmbFiltroEstado.setItems(FXCollections.observableArrayList(
             "PENDIENTE", "ASIGNADA", "COMPLETADA", "CANCELADA"));
 
         cargarClientes();
         cargarTiposServicio();
-
-        // Auto-completar TERMINADO antes de mostrar la tabla
         actualizarTerminadas();
         cargarTabla();
     }
@@ -119,9 +125,10 @@ public class SolicitudController {
             ok = !txtHoraHH.getText().trim().isEmpty() && !txtHoraMM.getText().trim().isEmpty();
 
         if (ok && txtHoraHH != null) {
-            // Validar hora no pasada si la fecha es hoy
             LocalDate fecha = dpFechaSolicitud.getValue();
             LocalTime hora  = parsearHora(txtHoraHH.getText() + ":" + txtHoraMM.getText());
+
+            // Validar hora no pasada si la fecha es hoy
             if (fecha != null && hora != null && fecha.equals(LocalDate.now())) {
                 if (hora.isBefore(LocalTime.now())) {
                     mostrarAviso("⚠️ La hora ingresada ya pasó. Elige una hora futura.", false);
@@ -129,9 +136,10 @@ public class SolicitudController {
                     return;
                 }
             }
-            // Validar disponibilidad de técnicos
-            if (fecha != null && hora != null) {
-                String aviso = verificarDisponibilidad(fecha, hora);
+
+            // Validar disponibilidad por especialidad + horaria
+            if (fecha != null && hora != null && cmbTipo.getValue() != null) {
+                String aviso = verificarDisponibilidad(fecha, hora, cmbTipo.getValue().getIdTipoServicio());
                 if (aviso != null) {
                     mostrarAviso(aviso, false);
                     btnGuardar.setDisable(true);
@@ -144,50 +152,72 @@ public class SolicitudController {
     }
 
     /**
-     * Verifica si hay al menos un técnico libre para la fecha/hora dada.
-     * Bloque por técnico: [hora_solicitud, hora_solicitud + 3h]
-     * Cuenta TANTO asignaciones activas COMO solicitudes PENDIENTES sin asignar
-     * (cada solicitud pendiente reservará un técnico).
-     * Retorna mensaje de error con la próxima hora disponible, o null si hay espacio.
+     * Al seleccionar un tipo de servicio, verifica si existe al menos un técnico
+     * activo con la especialidad requerida. Si no hay ninguno, muestra advertencia.
      */
-    private String verificarDisponibilidad(LocalDate fecha, LocalTime hora) {
-        int diaSemana = fecha.getDayOfWeek().getValue(); // 1=Lun..7=Dom
-        java.util.List<Tecnico> activos = tecnicoDAO.listarActivos();
+    private void verificarEspecialidadTipo(TipoServicio tipo) {
+        if (tipo == null) { mostrarAviso("", true); return; }
+        int idEspecialidad = dao.obtenerEspecialidadDeTipo(tipo.getIdTipoServicio());
+        if (idEspecialidad <= 0) return;
+        boolean hayTecnico = hayTecnicoConEspecialidad(idEspecialidad);
+        if (!hayTecnico) {
+            mostrarAviso("⚠️ No hay técnicos activos con la especialidad requerida para este servicio.", false);
+        }
+    }
 
-        // Bloques ocupados: técnicos ya asignados (tb_asignacion)
-        Map<Integer, List<java.time.LocalTime[]>> ocupadosPorTecnico =
+    /** Devuelve true si hay al menos un técnico activo con esa especialidad. */
+    private boolean hayTecnicoConEspecialidad(int idEspecialidad) {
+        try (PreparedStatement ps = ConexionDB.getInstancia().getConexion().prepareStatement(
+                "SELECT COUNT(*) FROM tb_tecnico WHERE estado=1 AND id_especialidad=?")) {
+            ps.setInt(1, idEspecialidad);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) return rs.getInt(1) > 0;
+        } catch (SQLException e) {
+            System.err.println("[SolicitudController] hayTecnicoConEspecialidad: " + e.getMessage());
+        }
+        return false;
+    }
+
+    /**
+     * Verifica disponibilidad de técnicos con la especialidad del tipo seleccionado
+     * para la fecha/hora dada. Retorna mensaje de error o null si hay espacio.
+     */
+    private String verificarDisponibilidad(LocalDate fecha, LocalTime hora, int idTipoServicio) {
+        int idEspecialidad = dao.obtenerEspecialidadDeTipo(idTipoServicio);
+        int diaSemana = fecha.getDayOfWeek().getValue();
+
+        // Solo técnicos activos con la especialidad requerida
+        List<Tecnico> activos = idEspecialidad > 0
+                ? tecnicoDAO.filtrar(idEspecialidad, 0)
+                : tecnicoDAO.listarActivos();
+
+        if (activos.isEmpty()) {
+            return "❌ No hay técnicos activos con la especialidad requerida para este servicio.";
+        }
+
+        Map<Integer, List<LocalTime[]>> ocupadosPorTecnico =
                 tecnicoDAO.obtenerOcupacionPorFecha(fecha);
-
-        // Solicitudes PENDIENTES en esa fecha (aún sin técnico asignado)
-        // Cada una consume un técnico disponible en ese bloque horario
-        java.util.List<LocalTime> pendientesSinAsignar =
+        List<LocalTime> pendientesSinAsignar =
                 dao.listarHorasPendientesPorFecha(fecha);
 
-        // Calcular cuántos técnicos pueden atender en esa hora
-        int capacidad = 0; // técnicos disponibles para esa hora
+        int capacidad = 0;
         for (Tecnico t : activos) {
-            // ¿Trabaja ese día?
             boolean[] dias = tecnicoDAO.cargarDiasHorario(t.getIdTecnico());
             if (!dias[diaSemana - 1]) continue;
-            // ¿La hora entra en su turno? (necesita al menos 2h antes del fin)
             String[] horas = tecnicoDAO.cargarHorasHorario(t.getIdTecnico());
             LocalTime ini = parsearHora(horas[0]);
             LocalTime fin = parsearHora(horas[1]);
-            if (ini == null || fin == null) { ini = LocalTime.of(8,0); fin = LocalTime.of(17,0); }
+            if (ini == null) ini = LocalTime.of(8,0);
+            if (fin == null) fin = LocalTime.of(17,0);
             if (hora.isBefore(ini) || hora.isAfter(fin.minusHours(2))) continue;
-            // ¿Está libre en ese bloque según tb_asignacion?
-            java.util.List<java.time.LocalTime[]> bloques =
-                    ocupadosPorTecnico.getOrDefault(t.getIdTecnico(), new java.util.ArrayList<>());
+            List<LocalTime[]> bloques = ocupadosPorTecnico.getOrDefault(t.getIdTecnico(), new ArrayList<>());
             boolean solapado = false;
-            for (java.time.LocalTime[] b : bloques) {
-                if (hora.isBefore(b[1]) && hora.plusHours(3).isAfter(b[0])) {
-                    solapado = true; break;
-                }
+            for (LocalTime[] b : bloques) {
+                if (hora.isBefore(b[1]) && hora.plusHours(3).isAfter(b[0])) { solapado = true; break; }
             }
             if (!solapado) capacidad++;
         }
 
-        // Contar cuántas solicitudes pendientes se solapan con esta hora
         long pendientesEnBloque = pendientesSinAsignar.stream().filter(h ->
             hora.isBefore(h.plusHours(3)) && hora.plusHours(3).isAfter(h)
         ).count();
@@ -195,60 +225,42 @@ public class SolicitudController {
         int libres = (int)(capacidad - pendientesEnBloque);
 
         if (libres <= 0) {
-            String horaStr = hora.toString().substring(0, 5);
-            // Límite: la última hora válida es 17:00 (técnicos trabajan hasta las 19:00)
             LocalTime limiteMaximo = LocalTime.of(17, 0);
-
-            // 1. Buscar hueco ANTES de la hora solicitada (desde 08:00 hacia la hora actual)
             LocalTime huecoAntes = null;
             LocalTime candidato = LocalTime.of(8, 0);
             while (!candidato.isAfter(hora.minusMinutes(30))) {
                 if (verificarHoraLibre(fecha, candidato, activos,
                         ocupadosPorTecnico, pendientesSinAsignar, diaSemana)) {
-                    huecoAntes = candidato;
-                    break;
+                    huecoAntes = candidato; break;
                 }
                 candidato = candidato.plusMinutes(30);
             }
-
-            // 2. Buscar próxima hora DESPUÉS de la solicitada (hasta el límite 15:00)
             LocalTime proxima = null;
             candidato = hora.plusMinutes(30);
             while (!candidato.isAfter(limiteMaximo)) {
                 if (verificarHoraLibre(fecha, candidato, activos,
                         ocupadosPorTecnico, pendientesSinAsignar, diaSemana)) {
-                    proxima = candidato;
-                    break;
+                    proxima = candidato; break;
                 }
                 candidato = candidato.plusMinutes(30);
             }
-
-            // 3. Construir mensaje
             StringBuilder msg = new StringBuilder(
-                "❌ Sin técnicos disponibles el " + fecha + " a las " + horaStr + ".");
-
-            if (huecoAntes != null) {
-                msg.append(" Hay disponibilidad antes: ")
-                   .append(huecoAntes.toString().substring(0, 5)).append(".");
-            }
-            if (proxima != null) {
-                msg.append(" Próxima hora disponible: ")
-                   .append(proxima.toString().substring(0, 5)).append(".");
-            }
-            if (huecoAntes == null && proxima == null) {
-                msg.append(" No hay horarios disponibles para ese día.");
-            }
-
+                "❌ Sin técnicos disponibles el " + fecha + " a las " + hora.toString().substring(0,5) + ".");
+            if (huecoAntes != null)
+                msg.append(" Disponibilidad antes: ").append(huecoAntes.toString().substring(0,5)).append(".");
+            if (proxima != null)
+                msg.append(" Próxima hora: ").append(proxima.toString().substring(0,5)).append(".");
+            if (huecoAntes == null && proxima == null)
+                msg.append(" No hay horarios disponibles ese día.");
             return msg.toString();
         }
-        return null; // hay disponibilidad
+        return null;
     }
 
-    /** Auxiliar: comprueba si una hora concreta tiene al menos 1 técnico libre */
     private boolean verificarHoraLibre(LocalDate fecha, LocalTime hora,
-            java.util.List<Tecnico> activos,
-            Map<Integer, List<java.time.LocalTime[]>> ocupadosPorTecnico,
-            java.util.List<LocalTime> pendientesSinAsignar,
+            List<Tecnico> activos,
+            Map<Integer, List<LocalTime[]>> ocupadosPorTecnico,
+            List<LocalTime> pendientesSinAsignar,
             int diaSemana) {
         int capacidad = 0;
         for (Tecnico t : activos) {
@@ -259,10 +271,9 @@ public class SolicitudController {
             if (ini == null) ini = LocalTime.of(8,0);
             if (fin == null) fin = LocalTime.of(17,0);
             if (hora.isBefore(ini) || hora.isAfter(fin.minusHours(2))) continue;
-            java.util.List<java.time.LocalTime[]> bloques =
-                    ocupadosPorTecnico.getOrDefault(t.getIdTecnico(), new java.util.ArrayList<>());
+            List<LocalTime[]> bloques = ocupadosPorTecnico.getOrDefault(t.getIdTecnico(), new ArrayList<>());
             boolean solapado = false;
-            for (java.time.LocalTime[] b : bloques)
+            for (LocalTime[] b : bloques)
                 if (hora.isBefore(b[1]) && hora.plusHours(3).isAfter(b[0])) { solapado=true; break; }
             if (!solapado) capacidad++;
         }
@@ -281,40 +292,20 @@ public class SolicitudController {
         }
     }
 
-    // ── Auto-TERMINADO ───────────────────────────────────────
-    /**
-     * Marca como TERMINADO toda solicitud cuyo estado sea PENDIENTE o ASIGNADA,
-     * cuya fecha sea hoy (o anterior) y cuya hora + 2 h ya haya pasado.
-     * También cierra asignaciones activas asociadas.
-     */
+    // ── Auto-COMPLETADO ──────────────────────────────────────
     private void actualizarTerminadas() {
         LocalDate hoy   = LocalDate.now();
         LocalTime ahora = LocalTime.now();
-
-        List<Solicitud> activas = dao.listarParaAutoTerminar(); // estado IN (PENDIENTE, ASIGNADA, EN_CAMINO, EN_PROCESO)
+        List<Solicitud> activas = dao.listarParaAutoTerminar();
         for (Solicitud s : activas) {
             if (s.getFechaSolicitada() == null) continue;
-            // Solo las de hoy o días anteriores
             if (s.getFechaSolicitada().isAfter(hoy)) continue;
-
             LocalTime horaSol = parsearHora(s.getHorarioPreferido());
             if (horaSol == null) continue;
-
-            // Si la fecha es anterior a hoy → siempre terminado
-            boolean pasado = s.getFechaSolicitada().isBefore(hoy);
-            // Si es hoy → solo si hora + 2h ya pasó
+            boolean pasado    = s.getFechaSolicitada().isBefore(hoy);
             boolean horaVencida = pasado || ahora.isAfter(horaSol.plusHours(2));
-
-            if (horaVencida) {
-                dao.cambiarEstado(s.getIdSolicitud(), "COMPLETADA");
-            }
+            if (horaVencida) dao.cambiarEstado(s.getIdSolicitud(), "COMPLETADA");
         }
-    }
-
-    private LocalTime parsearHora(String hhmm) {
-        if (hhmm == null || hhmm.isBlank()) return null;
-        try { return LocalTime.parse(hhmm.trim().length() == 5 ? hhmm.trim() : hhmm.trim().substring(0,5)); }
-        catch (Exception e) { return null; }
     }
 
     // ── Carga de combos ──────────────────────────────────────
@@ -352,8 +343,7 @@ public class SolicitudController {
     }
 
     // ── Filtros ──────────────────────────────────────────────
-    @FXML public void nuevaSolicitud() { limpiarFormulario(); }
-
+    @FXML public void nuevaSolicitud()  { limpiarFormulario(); }
     @FXML public void buscarSolicitud() { aplicarFiltros(); }
 
     @FXML public void limpiarFiltros() {
@@ -366,7 +356,6 @@ public class SolicitudController {
     private void aplicarFiltros() {
         String txt    = txtBuscar.getText().trim().toLowerCase();
         String estado = cmbFiltroEstado.getValue();
-
         if (txt.isEmpty() && estado == null) {
             tblSolicitudes.setItems(todasLasSolicitudes);
             lblContador.setText(todasLasSolicitudes.size() + " solicitudes");
@@ -376,7 +365,6 @@ public class SolicitudController {
         for (Solicitud s : todasLasSolicitudes) {
             boolean matchTexto = txt.isEmpty()
                 || (s.getNombreCliente() != null && s.getNombreCliente().toLowerCase().contains(txt))
-                || (s.getCodigo()        != null && s.getCodigo().toLowerCase().contains(txt))
                 || (s.getNombreTipo()    != null && s.getNombreTipo().toLowerCase().contains(txt));
             boolean matchEstado = estado == null || estado.equals(s.getEstado());
             if (matchTexto && matchEstado) filtradas.add(s);
@@ -392,7 +380,6 @@ public class SolicitudController {
         solicitudSeleccionada = sel;
         lblTituloForm.setText("Editar solicitud");
 
-        // Habilitar cancelar solo si aún está pendiente
         boolean cancelable = "PENDIENTE".equals(sel.getEstado());
         btnCancelarSolicitud.setDisable(!cancelable);
 
@@ -418,19 +405,38 @@ public class SolicitudController {
         String error = validarCompleto();
         if (error != null) { mostrarMensaje(error, false); return; }
 
+        Cliente      cliente = cmbCliente.getValue();
+        TipoServicio tipo    = cmbTipo.getValue();
+        LocalDate    fecha   = dpFechaSolicitud.getValue();
+        String       hora    = obtenerHora();
+
+        // Validar duplicado: mismo cliente, misma fecha y misma hora
+        boolean esEdicion = (solicitudSeleccionada != null);
+        int idExcluir = esEdicion ? solicitudSeleccionada.getIdSolicitud() : 0;
+        if (existeSolicitudDuplicada(cliente.getIdCliente(), fecha, hora, idExcluir)) {
+            mostrarMensaje("❌ Este cliente ya tiene una solicitud para esa fecha y hora.", false);
+            return;
+        }
+
+        // Validar que haya técnico con la especialidad correcta disponible
+        String avisoDisp = verificarDisponibilidad(fecha, parsearHora(hora), tipo.getIdTipoServicio());
+        if (avisoDisp != null) {
+            mostrarMensaje(avisoDisp, false);
+            return;
+        }
+
         Solicitud s = new Solicitud();
-        s.setIdCliente(cmbCliente.getValue().getIdCliente());
-        s.setIdTipoServicio(cmbTipo.getValue().getIdTipoServicio());
+        s.setIdCliente(cliente.getIdCliente());
+        s.setIdTipoServicio(tipo.getIdTipoServicio());
         s.setPrioridad(cmbPrioridad.getValue());
-        // El estado siempre es PENDIENTE al crear; al editar se conserva el existente
-        s.setEstado(solicitudSeleccionada == null ? "PENDIENTE" : solicitudSeleccionada.getEstado());
-        s.setFechaSolicitada(dpFechaSolicitud.getValue());
-        s.setHorarioPreferido(obtenerHora());
+        s.setEstado(esEdicion ? solicitudSeleccionada.getEstado() : "PENDIENTE");
+        s.setFechaSolicitada(fecha);
+        s.setHorarioPreferido(hora);
         s.setDescripcion(txtDescripcion.getText().trim());
         s.setObservaciones(txtObservaciones.getText().trim());
 
         boolean ok;
-        if (solicitudSeleccionada == null) {
+        if (!esEdicion) {
             ok = dao.guardar(s);
         } else {
             s.setIdSolicitud(solicitudSeleccionada.getIdSolicitud());
@@ -438,7 +444,8 @@ public class SolicitudController {
         }
 
         if (ok) {
-            mostrarMensaje(solicitudSeleccionada == null ? "Solicitud registrada." : "Solicitud actualizada.", true);
+            mostrarToast(!esEdicion ? "✔  Solicitud nueva registrada" : "✔  Solicitud actualizada", true);
+            mostrarMensaje(!esEdicion ? "Solicitud registrada." : "Solicitud actualizada.", true);
             actualizarTerminadas();
             cargarTabla();
             limpiarFormulario();
@@ -447,15 +454,38 @@ public class SolicitudController {
         }
     }
 
+    /**
+     * Verifica si ya existe una solicitud activa (no cancelada) para el mismo
+     * cliente, fecha y hora. Excluye la solicitud que se está editando.
+     */
+    private boolean existeSolicitudDuplicada(int idCliente, LocalDate fecha, String hora, int idExcluir) {
+        String sql = "SELECT COUNT(*) FROM tb_solicitud " +
+                     "WHERE id_cliente=? AND fecha_solicitada=? AND horario_preferido=? " +
+                     "  AND estado != 'CANCELADA' " +
+                     (idExcluir > 0 ? "AND id_solicitud != ? " : "");
+        try (PreparedStatement ps = ConexionDB.getInstancia().getConexion().prepareStatement(sql)) {
+            ps.setInt(1, idCliente);
+            ps.setDate(2, java.sql.Date.valueOf(fecha));
+            ps.setString(3, hora);
+            if (idExcluir > 0) ps.setInt(4, idExcluir);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) return rs.getInt(1) > 0;
+        } catch (SQLException e) {
+            System.err.println("[SolicitudController] existeSolicitudDuplicada: " + e.getMessage());
+        }
+        return false;
+    }
+
     // ── Cancelar solicitud ───────────────────────────────────
     @FXML public void cancelarSolicitud() {
         if (solicitudSeleccionada == null) return;
         Alert a = new Alert(Alert.AlertType.CONFIRMATION,
-            "¿Cancelar la solicitud " + solicitudSeleccionada.getCodigo() + "?",
+            "¿Cancelar la solicitud #" + solicitudSeleccionada.getIdSolicitud() + "?",
             ButtonType.YES, ButtonType.NO);
         a.setHeaderText(null);
         a.showAndWait().ifPresent(bt -> {
             if (bt == ButtonType.YES && dao.cambiarEstado(solicitudSeleccionada.getIdSolicitud(), "CANCELADA")) {
+                mostrarToast("✔  Solicitud cancelada", true);
                 mostrarMensaje("Solicitud cancelada.", true);
                 actualizarTerminadas();
                 cargarTabla();
@@ -479,6 +509,7 @@ public class SolicitudController {
         if (txtHoraHH != null) { txtHoraHH.setText("08"); txtHoraMM.setText("00"); }
         txtDescripcion.clear(); txtObservaciones.clear();
         lblMensaje.setText(""); lblTituloForm.setText("Nueva solicitud");
+        if (lblDisponibilidad != null) lblDisponibilidad.setText("");
         btnCancelarSolicitud.setDisable(true); btnGuardar.setDisable(true);
         tblSolicitudes.getSelectionModel().clearSelection();
     }
@@ -496,9 +527,9 @@ public class SolicitudController {
         if (cmbTipo.getValue() == null)      return "Selecciona el tipo de servicio.";
         if (cmbPrioridad.getValue() == null) return "Selecciona la prioridad.";
         LocalDate fecha = dpFechaSolicitud.getValue();
-        if (fecha == null) return "Selecciona la fecha de atención.";
-        if (fecha.isBefore(LocalDate.now()))               return "La fecha no puede ser anterior a hoy.";
-        if (fecha.isAfter(LocalDate.now().plusMonths(2)))  return "La fecha no puede ser más de 2 meses adelante.";
+        if (fecha == null)                              return "Selecciona la fecha del servicio.";
+        if (fecha.isBefore(LocalDate.now()))            return "La fecha no puede ser anterior a hoy.";
+        if (fecha.isAfter(LocalDate.now().plusMonths(2))) return "La fecha no puede ser más de 2 meses adelante.";
         if (txtHoraHH != null) {
             String hh = txtHoraHH.getText().trim(), mm = txtHoraMM.getText().trim();
             if (hh.isEmpty() || mm.isEmpty()) return "Ingresa la hora de atención.";
@@ -506,7 +537,17 @@ public class SolicitudController {
             if (total < 480)  return "La hora no puede ser antes de las 08:00.";
             if (total > 1020) return "La hora no puede ser después de las 17:00.";
         }
+        // Validar especialidad disponible al guardar
+        int idEsp = dao.obtenerEspecialidadDeTipo(cmbTipo.getValue().getIdTipoServicio());
+        if (idEsp > 0 && !hayTecnicoConEspecialidad(idEsp))
+            return "❌ No hay técnicos activos con la especialidad requerida para este servicio.";
         return null;
+    }
+
+    private LocalTime parsearHora(String hhmm) {
+        if (hhmm == null || hhmm.isBlank()) return null;
+        try { return LocalTime.parse(hhmm.trim().length() == 5 ? hhmm.trim() : hhmm.trim().substring(0,5)); }
+        catch (Exception e) { return null; }
     }
 
     private void mostrarMensaje(String t, boolean ok) {
@@ -514,5 +555,28 @@ public class SolicitudController {
         lblMensaje.setStyle(ok ? "-fx-text-fill: #2E7D32; -fx-font-size: 12px;"
                                : "-fx-text-fill: #C62828; -fx-font-size: 12px;");
     }
+
     private String nvl(String s) { return s == null ? "" : s; }
+
+    private void mostrarToast(String mensaje, boolean exito) {
+        if (toastPane == null) return;
+        Label toast = new Label(mensaje);
+        toast.setWrapText(false);
+        toast.setStyle(
+            "-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: white;" +
+            "-fx-padding: 10 20 10 20; -fx-background-radius: 18;" +
+            (exito ? "-fx-background-color: #2E7D32;" : "-fx-background-color: #C62828;") +
+            "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.28), 8, 0, 0, 2);"
+        );
+        StackPane.setAlignment(toast, Pos.CENTER);
+        toastPane.getChildren().add(toast);
+        FadeTransition fadeIn  = new FadeTransition(Duration.millis(200), toast);
+        fadeIn.setFromValue(0); fadeIn.setToValue(1);
+        PauseTransition pausa  = new PauseTransition(Duration.seconds(2.2));
+        FadeTransition fadeOut = new FadeTransition(Duration.millis(350), toast);
+        fadeOut.setFromValue(1); fadeOut.setToValue(0);
+        SequentialTransition seq = new SequentialTransition(fadeIn, pausa, fadeOut);
+        seq.setOnFinished(e -> toastPane.getChildren().remove(toast));
+        seq.play();
+    }
 }
