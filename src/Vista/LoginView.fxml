@@ -112,6 +112,9 @@
                     styleClass="btn-primary"
                     onAction="#handleLogin"/>
 
+            <Hyperlink text="¿Olvidaste tu contraseña?"
+           onAction="#recuperarPassword"/>
+            
             <HBox alignment="CENTER" spacing="10"
                   style="-fx-padding: 20 0 0 0;">
                 <Label text="v1.0.0 — Sistema de Asignación"

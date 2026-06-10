@@ -11,6 +11,9 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import java.net.URL;
+import java.util.Optional;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
 
 /**
  * MenuAdminController.java
@@ -65,18 +68,47 @@ public class MenuAdminController implements ControladorConUsuario {
         cargarVista("AdminReportesView.fxml");
     }
 
-    @FXML public void cerrarSesion() {
-        try {
-            URL url = getClass().getResource("/Vista/LoginView.fxml");
-            Parent root = FXMLLoader.load(url);
-            Stage stage = (Stage) contentArea.getScene().getWindow();
-            stage.setScene(new Scene(root, 860, 540));
-            stage.setMaximized(false);
-            stage.centerOnScreen();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+  @FXML
+    public void cerrarSesion() {
+
+    Alert alert =
+            new Alert(Alert.AlertType.CONFIRMATION);
+
+    alert.setTitle("Cerrar sesión");
+    alert.setHeaderText(null);
+
+    alert.setContentText(
+            "¿Está seguro que desea cerrar sesión?"
+    );
+
+    Optional<ButtonType> result =
+            alert.showAndWait();
+
+    if (!result.isPresent()
+            || result.get() != ButtonType.OK) {
+        return;
     }
+
+    try {
+
+        FXMLLoader loader =
+                new FXMLLoader(
+                        getClass().getResource(
+                                "/Vista/LoginView.fxml"));
+
+        Parent root = loader.load();
+
+        Stage stage =
+                (Stage) contentArea
+                        .getScene()
+                        .getWindow();
+
+        stage.setScene(new Scene(root));
+
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+}
 
     // ─── Internos ────────────────────────────────────────────────────────────
 

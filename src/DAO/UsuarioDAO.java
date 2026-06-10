@@ -44,6 +44,47 @@ public class UsuarioDAO {
         return null;
     }
 
+    //--- Restablecer Contraseña (ABEL)
+    public String restablecerPassword(String username) {
+
+    String nuevaPassword =
+            "Temp" + (int)(Math.random() * 9000 + 1000);
+
+    try {
+
+        String sql =
+            "UPDATE tb_usuario "
+          + "SET password_hash=? "
+          + "WHERE username=?";
+        
+       
+
+        Connection cn = ConexionDB.getInstancia().getConexion();
+
+        PreparedStatement ps =
+                cn.prepareStatement(sql);
+
+        ps.setString(
+            1,
+            sha256(nuevaPassword)
+        );
+
+        ps.setString(2, username);
+
+        int filas = ps.executeUpdate();
+
+        if(filas > 0) {
+            return nuevaPassword;
+        }
+
+    } catch(Exception e) {
+        e.printStackTrace();
+    }
+
+    return null;
+}
+    
+    
     // ─── CRUD ────────────────────────────────────────────────────────────────
 
     public List<Usuario> listarGestores() {

@@ -14,7 +14,9 @@ import java.net.URL;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
-
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
+import java.util.Optional;
 public class MenuPrincipalController {
 
     @FXML private Label lblModuloActual;
@@ -103,19 +105,48 @@ public class MenuPrincipalController {
         cargarVista("ReporteView.fxml");
     }
 
-    @FXML public void cerrarSesion() {
-        try {
-            URL url = getClass().getResource("../Vista/LoginView.fxml");
-            if (url == null) url = getClass().getResource("/Vista/LoginView.fxml");
-            Parent root = FXMLLoader.load(url);
-            Stage stage = (Stage) contentArea.getScene().getWindow();
-            stage.setScene(new Scene(root, 860, 540));
-            stage.setMaximized(false);
-            stage.centerOnScreen();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+@FXML
+public void cerrarSesion() {
+
+    Alert alert =
+            new Alert(Alert.AlertType.CONFIRMATION);
+
+    alert.setTitle("Cerrar sesión");
+    alert.setHeaderText(null);
+
+    alert.setContentText(
+            "¿Está seguro que desea cerrar sesión?"
+    );
+
+    Optional<ButtonType> result =
+            alert.showAndWait();
+
+    if (!result.isPresent()
+            || result.get() != ButtonType.OK) {
+        return;
     }
+
+    try {
+
+        FXMLLoader loader =
+                new FXMLLoader(
+                        getClass().getResource(
+                                "/Vista/LoginView.fxml"));
+
+        Parent root = loader.load();
+
+        Stage stage =
+                (Stage) contentArea
+                        .getScene()
+                        .getWindow();
+
+        stage.setScene(new Scene(root));
+
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+
+}
 
     private void cargarVista(String nombreArchivo) {
         try {

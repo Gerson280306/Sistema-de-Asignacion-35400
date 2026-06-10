@@ -10,7 +10,7 @@ public class ConexionDB {
     private static final String PUERTO   = "3306";
     private static final String BASE     = "db_asignacion";
     private static final String USUARIO  = "root";
-    private static final String PASSWORD = "S0p0rt3";  
+    private static final String PASSWORD = "root";  
     private static final String URL      =
         "jdbc:mysql://" + HOST + ":" + PUERTO + "/" + BASE
         + "?useSSL=false&serverTimezone=America/Lima&allowPublicKeyRetrieval=true";
