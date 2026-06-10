@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.geometry.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx/17"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="Controlador.MenuPrincipalController"
+            prefWidth="1200" prefHeight="700"
+            stylesheets="@styles.css">
+
+    <!-- SIDEBAR IZQUIERDO -->
+    <left>
+        <VBox styleClass="sidebar" prefWidth="230">
+
+            <!-- Logo -->
+            <VBox styleClass="sidebar-logo-area" spacing="3">
+                <HBox spacing="10" alignment="CENTER_LEFT">
+                    <StackPane>
+                        <Pane prefWidth="36" prefHeight="36"
+                              style="-fx-background-color: #1565C0; -fx-background-radius: 8;"/>
+                        <Label text="SBR"
+                               style="-fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: bold;"/>
+                    </StackPane>
+                    <VBox spacing="1">
+                        <Label text="Sistema de" styleClass="sidebar-logo-sub"/>
+                        <Label text="Asignación" styleClass="sidebar-logo-text"/>
+                    </VBox>
+                </HBox>
+            </VBox>
+
+            <Separator style="-fx-border-color: #1A3A5C; -fx-padding: 0;"/>
+
+            <!-- Info del usuario -->
+            <HBox style="-fx-padding: 14 16 14 16; -fx-background-color: #0F2740;"
+                  spacing="10" alignment="CENTER_LEFT">
+                <StackPane>
+                    <Pane prefWidth="32" prefHeight="32"
+                          style="-fx-background-color: #1565C0; -fx-background-radius: 16;"/>
+                    <Label text="G"
+                           style="-fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold;"/>
+                </StackPane>
+                <VBox spacing="1">
+                    <Label fx:id="lblNombreUsuario"
+                           text="Gestor de Asignaciones"
+                           style="-fx-text-fill: white; -fx-font-size: 12px; -fx-font-weight: bold;"/>
+                    <Label text="ROL: GESTOR"
+                           style="-fx-text-fill: #6B8CAE; -fx-font-size: 11px;"/>
+                </VBox>
+            </HBox>
+
+            <Separator style="-fx-border-color: #1A3A5C;"/>
+
+            <!-- Menú -->
+            <ScrollPane VBox.vgrow="ALWAYS"
+                        fitToWidth="true"
+                        style="-fx-background-color: transparent; -fx-background: transparent; -fx-border-color: transparent;">
+                <VBox spacing="0">
+
+                    <Label text="PRINCIPAL" styleClass="sidebar-section-label"/>
+
+                    <Button fx:id="btnDashboard"
+                            text="⬛  Panel principal"
+                            styleClass="sidebar-item-active"
+                            onAction="#mostrarDashboard"/>
+
+                    <Label text="GESTIÓN" styleClass="sidebar-section-label"/>
+
+                    <Button fx:id="btnClientes"
+                            text="👤  Clientes"
+                            styleClass="sidebar-item"
+                            onAction="#mostrarClientes"/>
+
+                    <Button fx:id="btnSolicitudes"
+                            text="📋  Solicitudes"
+                            styleClass="sidebar-item"
+                            onAction="#mostrarSolicitudes"/>
+
+                    <Button fx:id="btnTecnicos"
+                            text="🔧  Técnicos"
+                            styleClass="sidebar-item"
+                            onAction="#mostrarTecnicos"/>
+
+                    <Label text="ASIGNACIÓN" styleClass="sidebar-section-label"/>
+
+                    <Button fx:id="btnAsignacionAuto"
+                            text="⚡  Asignación automática"
+                            styleClass="sidebar-item"
+                            onAction="#mostrarAsignacionAuto"/>
+
+                </VBox>
+            </ScrollPane>
+
+            <!-- Cerrar sesión al estilo del sidebar -->
+            <Separator style="-fx-border-color: #1A3A5C;"/>
+            <Button text="⬅  Cerrar sesión"
+                    styleClass="sidebar-item"
+                    style="-fx-text-fill: #EF5350;"
+                    onAction="#cerrarSesion"
+                    prefWidth="230"/>
+        </VBox>
+    </left>
+
+    <!-- ÁREA CENTRAL -->
+    <center>
+        <VBox>
+
+            <HBox styleClass="topbar" alignment="CENTER_LEFT" spacing="0">
+                <Label fx:id="lblModuloActual"
+                       text="Panel principal"
+                       styleClass="topbar-title"
+                       HBox.hgrow="ALWAYS"/>
+                <HBox spacing="12" alignment="CENTER_RIGHT">
+                    <Label fx:id="lblFechaHora"
+                           text=""
+                           styleClass="topbar-user"/>
+                    <Separator orientation="VERTICAL"
+                               style="-fx-border-color: #DDE3EA; -fx-padding: 8 0 8 0;"/>
+                    <Label fx:id="lblRolUsuario"
+                           text="Gestor"
+                           styleClass="topbar-user"/>
+                </HBox>
+            </HBox>
+
+            <StackPane fx:id="contentArea" VBox.vgrow="ALWAYS"
+                       style="-fx-background-color: #F0F4F8; -fx-padding: 24;">
+
+                <!-- Dashboard por defecto -->
+                <ScrollPane fitToWidth="true"
+                            style="-fx-background-color: transparent; -fx-background: transparent; -fx-border-color: transparent;">
+                    <VBox spacing="20">
+
+                        <HBox spacing="16">
+                            <VBox styleClass="card" HBox.hgrow="ALWAYS" spacing="6">
+                                <Label text="CLIENTES REGISTRADOS" styleClass="label-field"/>
+                                <Label fx:id="kpiClientes" text="—"
+                                       style="-fx-font-size: 32px; -fx-font-weight: bold; -fx-text-fill: #1565C0;"/>
+                                <Label text="Total en el sistema" styleClass="label-subtitle"/>
+                            </VBox>
+                            <VBox styleClass="card" HBox.hgrow="ALWAYS" spacing="6">
+                                <Label text="SOLICITUDES PENDIENTES" styleClass="label-field"/>
+                                <Label fx:id="kpiSolicitudes" text="—"
+                                       style="-fx-font-size: 32px; -fx-font-weight: bold; -fx-text-fill: #F57F17;"/>
+                                <Label text="Sin asignar" styleClass="label-subtitle"/>
+                            </VBox>
+                            <VBox styleClass="card" HBox.hgrow="ALWAYS" spacing="6">
+                                <Label text="TÉCNICOS DISPONIBLES" styleClass="label-field"/>
+                                <Label fx:id="kpiTecnicos" text="—"
+                                       style="-fx-font-size: 32px; -fx-font-weight: bold; -fx-text-fill: #2E7D32;"/>
+                                <Label text="Activos y libres" styleClass="label-subtitle"/>
+                            </VBox>
+                            <VBox styleClass="card" HBox.hgrow="ALWAYS" spacing="6">
+                                <Label text="ASIGNACIONES HOY" styleClass="label-field"/>
+                                <Label fx:id="kpiAsignaciones" text="—"
+                                       style="-fx-font-size: 32px; -fx-font-weight: bold; -fx-text-fill: #1565C0;"/>
+                                <Label text="Completadas / Total" styleClass="label-subtitle"/>
+                            </VBox>
+                        </HBox>
+
+                        <HBox spacing="16">
+                            <VBox styleClass="card" HBox.hgrow="ALWAYS" spacing="16">
+                                <Label text="Acciones rápidas" styleClass="label-section"/>
+                                <FlowPane hgap="10" vgap="10">
+                                    <Button text="+ Nueva solicitud"
+                                            styleClass="btn-primary"
+                                            onAction="#mostrarSolicitudes"/>
+                                    <Button text="⚡ Asignar automáticamente"
+                                            styleClass="btn-secondary"
+                                            onAction="#mostrarAsignacionAuto"/>
+                                    <Button text="👤 Nuevo cliente"
+                                            styleClass="btn-secondary"
+                                            onAction="#mostrarClientes"/>
+                                </FlowPane>
+                            </VBox>
+                        </HBox>
+
+                        <VBox styleClass="card" spacing="12">
+                            <HBox alignment="CENTER_LEFT">
+                                <Label text="Últimas solicitudes" styleClass="label-section"
+                                       HBox.hgrow="ALWAYS"/>
+                                <Button text="Ver todas →"
+                                        styleClass="btn-icon"
+                                        onAction="#mostrarSolicitudes"/>
+                            </HBox>
+                            <TableView fx:id="tblUltimasSolicitudes"
+                                       prefHeight="200"
+                                       styleClass="table-view">
+                                <columns>
+                                    <TableColumn fx:id="colIdSol"       text="ID"               prefWidth="60"/>
+                                    <TableColumn fx:id="colClienteSol"  text="Cliente"           prefWidth="180"/>
+                                    <TableColumn fx:id="colFechaSol"    text="Fecha"             prefWidth="130"/>
+                                    <TableColumn fx:id="colPrioridadSol" text="Prioridad"        prefWidth="100"/>
+                                    <TableColumn fx:id="colEstadoSol"   text="Estado"            prefWidth="120"/>
+                                    <TableColumn fx:id="colTecnicoSol"  text="Técnico asignado"  prefWidth="180"/>
+                                </columns>
+                                <placeholder>
+                                    <Label text="No hay solicitudes recientes" styleClass="label-subtitle"/>
+                                </placeholder>
+                            </TableView>
+                        </VBox>
+
+                    </VBox>
+                </ScrollPane>
+
+            </StackPane>
+        </VBox>
+    </center>
+
+</BorderPane>
