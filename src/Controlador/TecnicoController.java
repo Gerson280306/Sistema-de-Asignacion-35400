@@ -1,5 +1,7 @@
 package Controlador;
 
+import Util.Log;
+
 import DAO.TecnicoDAO;
 import Modelo.Tecnico;
 import Modelo.Especialidad;
@@ -149,7 +151,7 @@ public class TecnicoController {
                 .prepareStatement("SELECT id_especialidad, nombre FROM tb_especialidad WHERE estado=1 ORDER BY nombre");
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) lista.add(new Especialidad(rs.getInt(1), rs.getString(2)));
-        } catch (SQLException e) { System.err.println(e.getMessage()); }
+        } catch (SQLException e) { Log.warn(e.getMessage()); }
         ObservableList<Especialidad> items = FXCollections.observableArrayList(lista);
         cmbEspecialidad.setItems(items);
         cmbFiltroEspecialidad.setItems(items);
@@ -164,7 +166,7 @@ public class TecnicoController {
                     "ORDER BY nombre");
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) lista.add(new Zona(rs.getInt(1), rs.getString(2)));
-        } catch (SQLException e) { System.err.println(e.getMessage()); }
+        } catch (SQLException e) { Log.warn(e.getMessage()); }
         ObservableList<Zona> items = FXCollections.observableArrayList(lista);
         cmbDistrito.setItems(items);
         cmbFiltroDistrito.setItems(items);
@@ -368,7 +370,7 @@ public class TecnicoController {
             ps.setString(1, dni);
             ResultSet rs = ps.executeQuery();
             if (rs.next()) return rs.getInt(1);
-        } catch (SQLException e) { System.err.println("[TecnicoController] obtenerIdPorDni: " + e.getMessage()); }
+        } catch (SQLException e) { Log.warn("[TecnicoController] obtenerIdPorDni: " + e.getMessage()); }
         return -1;
     }
 

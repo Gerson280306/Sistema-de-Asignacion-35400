@@ -1,5 +1,7 @@
 package Controlador;
 
+import Util.Log;
+
 import Modelo.Usuario;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -74,7 +76,7 @@ public class MenuAdminController implements ControladorConUsuario {
             stage.setMaximized(false);
             stage.centerOnScreen();
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.error(e);
         }
     }
 
@@ -99,7 +101,7 @@ public class MenuAdminController implements ControladorConUsuario {
             contentArea.getChildren().setAll(vista);
         } catch (Exception e) {
             mostrarError("Error al cargar " + nombreArchivo + ": " + e.getMessage());
-            e.printStackTrace();
+            Log.error(e);
         }
     }
 

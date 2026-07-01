@@ -1,5 +1,7 @@
 package DAO;
 
+import Util.Log;
+
 import Conexion.ConexionDB;
 import Modelo.Cliente;
 import Modelo.Zona;
@@ -22,7 +24,7 @@ public class ClienteDAO {
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) lista.add(mapear(rs));
         } catch (SQLException e) {
-            System.err.println("[ClienteDAO] listarTodos: " + e.getMessage());
+            Log.warn("[ClienteDAO] listarTodos: " + e.getMessage());
         }
         return lista;
     }
@@ -41,7 +43,7 @@ public class ClienteDAO {
             ResultSet rs = ps.executeQuery();
             while (rs.next()) lista.add(mapear(rs));
         } catch (SQLException e) {
-            System.err.println("[ClienteDAO] buscar: " + e.getMessage());
+            Log.warn("[ClienteDAO] buscar: " + e.getMessage());
         }
         return lista;
     }
@@ -66,7 +68,7 @@ public class ClienteDAO {
             ps.setInt(11, c.getEstado());
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
-            System.err.println("[ClienteDAO] guardar: " + e.getMessage());
+            Log.warn("[ClienteDAO] guardar: " + e.getMessage());
             return false;
         }
     }
@@ -92,7 +94,7 @@ public class ClienteDAO {
             ps.setInt(12, c.getIdCliente());
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
-            System.err.println("[ClienteDAO] actualizar: " + e.getMessage());
+            Log.warn("[ClienteDAO] actualizar: " + e.getMessage());
             return false;
         }
     }
@@ -104,7 +106,7 @@ public class ClienteDAO {
             ps.setInt(1, id);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
-            System.err.println("[ClienteDAO] eliminar: " + e.getMessage());
+            Log.warn("[ClienteDAO] eliminar: " + e.getMessage());
             return false;
         }
     }
@@ -116,6 +118,29 @@ public class ClienteDAO {
             ps.setString(1, dni); ps.setInt(2, idExcluir);
             return ps.executeQuery().next();
         } catch (SQLException e) { return false; }
+    }
+
+    // ── SOLICITUDES ACTIVAS (RF05-CP02) ──────────────────────
+    /**
+     * Cuenta las solicitudes del cliente que no están en estado final
+     * (no CANCELADA ni COMPLETADA). Se usa para bloquear la eliminación
+     * de un cliente con servicios en curso.
+     */
+    public int contarSolicitudesActivas(int idCliente) {
+        String sql = "SELECT COUNT(*) FROM tb_solicitud WHERE id_cliente=? "
+                   + "AND estado NOT IN ('CANCELADA','COMPLETADA')";
+        try (PreparedStatement ps = conn().prepareStatement(sql)) {
+            ps.setInt(1, idCliente);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) return rs.getInt(1);
+        } catch (SQLException e) {
+            Log.warn("[ClienteDAO] contarSolicitudesActivas: " + e.getMessage());
+        }
+        return 0;
+    }
+
+    public boolean tieneSolicitudesActivas(int idCliente) {
+        return contarSolicitudesActivas(idCliente) > 0;
     }
 
     // ── MAPEAR ResultSet → Cliente ───────────────────────────

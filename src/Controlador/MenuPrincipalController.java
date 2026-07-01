@@ -1,5 +1,7 @@
 package Controlador;
 
+import Util.Log;
+
 import Conexion.ConexionDB;
 import Modelo.Solicitud;
 import javafx.beans.property.SimpleStringProperty;
@@ -146,7 +148,7 @@ public class MenuPrincipalController {
              ResultSet rs = ps.executeQuery()) {
             if (rs.next()) return rs.getInt(1);
         } catch (SQLException e) {
-            System.err.println("[MenuPrincipal] queryInt: " + e.getMessage());
+            Log.warn("[MenuPrincipal] queryInt: " + e.getMessage());
         }
         return 0;
     }
@@ -186,7 +188,7 @@ public class MenuPrincipalController {
                 lista.add(s);
             }
         } catch (SQLException e) {
-            System.err.println("[MenuPrincipal] cargarUltimasSolicitudes: " + e.getMessage());
+            Log.warn("[MenuPrincipal] cargarUltimasSolicitudes: " + e.getMessage());
         }
         tblUltimasSolicitudes.setItems(FXCollections.observableArrayList(lista));
     }
@@ -245,17 +247,26 @@ public class MenuPrincipalController {
     }
 
     @FXML public void cerrarSesion() {
-        try {
-            URL url = getClass().getResource("../Vista/LoginView.fxml");
-            if (url == null) url = getClass().getResource("/Vista/LoginView.fxml");
-            Parent root = FXMLLoader.load(url);
-            Stage stage = (Stage) contentArea.getScene().getWindow();
-            stage.setScene(new Scene(root, 860, 540));
-            stage.setMaximized(false);
-            stage.centerOnScreen();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        Alert a = new Alert(Alert.AlertType.CONFIRMATION,
+            "¿Deseas cerrar la sesión actual?", ButtonType.YES, ButtonType.NO);
+        a.setHeaderText(null);
+        a.setTitle("Confirmar cierre de sesión");
+        a.showAndWait().ifPresent(bt -> {
+            if (bt == ButtonType.YES) {
+                try {
+                    URL url = getClass().getResource("../Vista/LoginView.fxml");
+                    if (url == null) url = getClass().getResource("/Vista/LoginView.fxml");
+                    Parent root = FXMLLoader.load(url);
+                    Stage stage = (Stage) contentArea.getScene().getWindow();
+                    stage.setScene(new Scene(root, 860, 540));
+                    stage.setMaximized(false);
+                    stage.centerOnScreen();
+                } catch (Exception e) {
+                    Log.error(e);
+                }
+            }
+            // Si elige NO, el diálogo se cierra y la sesión permanece intacta (RF02-CP03).
+        });
     }
 
     // ── Privados ─────────────────────────────────────────────
@@ -270,7 +281,7 @@ public class MenuPrincipalController {
             contentArea.getChildren().setAll(vista);
         } catch (Exception e) {
             mostrarError("Error al cargar " + nombreArchivo + ":\n" + e.getMessage());
-            e.printStackTrace();
+            Log.error(e);
         }
     }
 

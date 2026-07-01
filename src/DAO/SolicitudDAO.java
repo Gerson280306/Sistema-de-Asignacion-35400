@@ -1,5 +1,7 @@
 package DAO;
 
+import Util.Log;
+
 import Conexion.ConexionDB;
 import Modelo.Solicitud;
 import java.sql.*;
@@ -47,7 +49,7 @@ public class SolicitudDAO {
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) lista.add(mapear(rs));
         } catch (SQLException e) {
-            System.err.println("[SolicitudDAO] listarParaAutoTerminar: " + e.getMessage());
+            Log.warn("[SolicitudDAO] listarParaAutoTerminar: " + e.getMessage());
         }
         return lista;
     }
@@ -75,7 +77,7 @@ public class SolicitudDAO {
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) lista.add(mapear(rs));
         } catch (SQLException e) {
-            System.err.println("[SolicitudDAO] listarPendientesHoy: " + e.getMessage());
+            Log.warn("[SolicitudDAO] listarPendientesHoy: " + e.getMessage());
         }
         return lista;
     }
@@ -102,7 +104,7 @@ public class SolicitudDAO {
             ResultSet rs = ps.executeQuery();
             while (rs.next()) lista.add(mapear(rs));
         } catch (SQLException e) {
-            System.err.println("[SolicitudDAO] listarConFiltro: " + e.getMessage());
+            Log.warn("[SolicitudDAO] listarConFiltro: " + e.getMessage());
         }
         return lista;
     }
@@ -130,7 +132,7 @@ public class SolicitudDAO {
             ResultSet rs = ps.executeQuery();
             while (rs.next()) lista.add(mapear(rs));
         } catch (SQLException e) {
-            System.err.println("[SolicitudDAO] buscar: " + e.getMessage());
+            Log.warn("[SolicitudDAO] buscar: " + e.getMessage());
         }
         return lista;
     }
@@ -155,7 +157,7 @@ public class SolicitudDAO {
             ps.setString(8, s.getObservaciones());
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
-            System.err.println("[SolicitudDAO] guardar: " + e.getMessage());
+            Log.warn("[SolicitudDAO] guardar: " + e.getMessage());
             return false;
         }
     }
@@ -179,7 +181,7 @@ public class SolicitudDAO {
             ps.setInt(9, s.getIdSolicitud());
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
-            System.err.println("[SolicitudDAO] actualizar: " + e.getMessage());
+            Log.warn("[SolicitudDAO] actualizar: " + e.getMessage());
             return false;
         }
     }
@@ -190,7 +192,7 @@ public class SolicitudDAO {
             ps.setString(1, nuevoEstado); ps.setInt(2, id);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
-            System.err.println("[SolicitudDAO] cambiarEstado: " + e.getMessage());
+            Log.warn("[SolicitudDAO] cambiarEstado: " + e.getMessage());
             return false;
         }
     }
@@ -204,7 +206,7 @@ public class SolicitudDAO {
             ResultSet rs = ps.executeQuery();
             if (rs.next()) return rs.getInt(1);
         } catch (SQLException e) {
-            System.err.println("[SolicitudDAO] obtenerEspecialidadDeTipo: " + e.getMessage());
+            Log.warn("[SolicitudDAO] obtenerEspecialidadDeTipo: " + e.getMessage());
         }
         return 0;
     }
@@ -219,7 +221,7 @@ public class SolicitudDAO {
                 return rs.wasNull() ? 0 : z;
             }
         } catch (SQLException e) {
-            System.err.println("[SolicitudDAO] obtenerZonaDeCliente: " + e.getMessage());
+            Log.warn("[SolicitudDAO] obtenerZonaDeCliente: " + e.getMessage());
         }
         return 0;
     }
@@ -228,6 +230,77 @@ public class SolicitudDAO {
      * Lista las horas (horario_preferido) de solicitudes PENDIENTES
      * en una fecha dada que aún no tienen técnico asignado.
      */
+    /**
+     * Devuelve todas las solicitudes cuya fecha_solicitada cae dentro del rango [inicio, fin].
+     * Usado por RF19 (consultar por rango de fechas) y RF20 (consultar por fecha exacta).
+     * @return lista vacia (nunca null) si no hay coincidencias o si el rango es invalido.
+     */
+    public List<Solicitud> listarPorRango(LocalDate inicio, LocalDate fin) {
+        if (inicio == null || fin == null || fin.isBefore(inicio)) return new ArrayList<>();
+        String sql = "SELECT s.*, CONCAT(c.nombres,' ',c.apellidos) AS nombre_cliente, "
+                   + "c.direccion AS direccion_cliente, "
+                   + "c.dni AS dni_cliente, c.telefono AS telefono_cliente, "
+                   + "ts.nombre AS nombre_tipo "
+                   + "FROM tb_solicitud s "
+                   + "JOIN tb_cliente c ON s.id_cliente=c.id_cliente "
+                   + "JOIN tb_tipo_servicio ts ON s.id_tipo_servicio=ts.id_tipo_servicio "
+                   + "WHERE s.fecha_solicitada BETWEEN ? AND ? "
+                   + "ORDER BY s.fecha_solicitada, s.horario_preferido";
+        List<Solicitud> lista = new ArrayList<>();
+        try (PreparedStatement ps = conn().prepareStatement(sql)) {
+            ps.setDate(1, java.sql.Date.valueOf(inicio));
+            ps.setDate(2, java.sql.Date.valueOf(fin));
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) lista.add(mapear(rs));
+        } catch (SQLException e) {
+            Log.warn("[SolicitudDAO.listarPorRango] " + e.getMessage());
+        }
+        return lista;
+    }
+
+    /**
+     * Valida que un rango de fechas sea logicamente correcto (RF19-CP02).
+     * Extraido como metodo estatico puro para poder probarse sin base de datos.
+     * @return null si el rango es valido, o un mensaje de error si no.
+     */
+    public static String validarRangoFechas(LocalDate inicio, LocalDate fin) {
+        if (inicio == null || fin == null) return "Las fechas de inicio y fin son obligatorias.";
+        if (fin.isBefore(inicio)) return "La fecha fin no puede ser anterior a la fecha inicio.";
+        return null;
+    }
+
+    /**
+     * Cambia el estado de una solicitud e indica el motivo (RF17).
+     * Solo permite cancelar solicitudes que esten en estado PENDIENTE o ASIGNADA.
+     * @return true si se cambio el estado, false si la solicitud ya esta cerrada o el motivo es vacio.
+     */
+    public boolean cancelarConMotivo(int idSolicitud, String motivo) {
+        if (motivo == null || motivo.trim().isEmpty()) return false;
+
+        // Verificar que la solicitud este en estado cancelable
+        String sqlEstado = "SELECT estado FROM tb_solicitud WHERE id_solicitud=?";
+        try (PreparedStatement ps = conn().prepareStatement(sqlEstado)) {
+            ps.setInt(1, idSolicitud);
+            ResultSet rs = ps.executeQuery();
+            if (!rs.next()) return false;
+            String estado = rs.getString("estado");
+            if (!"PENDIENTE".equals(estado) && !"ASIGNADA".equals(estado)) return false;
+        } catch (SQLException e) {
+            Log.warn("[SolicitudDAO.cancelarConMotivo] verificar estado: " + e.getMessage());
+            return false;
+        }
+
+        String sqlUpdate = "UPDATE tb_solicitud SET estado='CANCELADA', observaciones=? WHERE id_solicitud=?";
+        try (PreparedStatement ps = conn().prepareStatement(sqlUpdate)) {
+            ps.setString(1, motivo.trim());
+            ps.setInt(2, idSolicitud);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            Log.warn("[SolicitudDAO.cancelarConMotivo] update: " + e.getMessage());
+            return false;
+        }
+    }
+
     public List<LocalTime> listarHorasPendientesPorFecha(LocalDate fecha) {
         List<LocalTime> lista = new ArrayList<>();
         String sql = "SELECT s.horario_preferido "
@@ -249,7 +322,7 @@ public class SolicitudDAO {
                 } catch (Exception ignored) {}
             }
         } catch (SQLException e) {
-            System.err.println("[SolicitudDAO] listarHorasPendientesPorFecha: " + e.getMessage());
+            Log.warn("[SolicitudDAO] listarHorasPendientesPorFecha: " + e.getMessage());
         }
         return lista;
     }

@@ -1,5 +1,7 @@
 package Controlador;
 
+import Util.Log;
+
 import DAO.AsignacionDAO;
 import DAO.SolicitudDAO;
 import DAO.TecnicoDAO;
@@ -156,7 +158,7 @@ public class AsignacionController {
                     Platform.runLater(() -> cargarTodosLosData());
                 }
             } catch (Exception ex) {
-                System.err.println("[Monitor] Error: " + ex.getMessage());
+                Log.warn("[Monitor] Error: " + ex.getMessage());
             }
         }, 5, 60, TimeUnit.SECONDS);
     }

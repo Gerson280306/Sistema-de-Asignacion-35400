@@ -1,5 +1,7 @@
 package Controlador;
 
+import Util.Log;
+
 import DAO.SolicitudDAO;
 import DAO.TecnicoDAO;
 import Modelo.Cliente;
@@ -173,7 +175,7 @@ public class SolicitudController {
             ResultSet rs = ps.executeQuery();
             if (rs.next()) return rs.getInt(1) > 0;
         } catch (SQLException e) {
-            System.err.println("[SolicitudController] hayTecnicoConEspecialidad: " + e.getMessage());
+            Log.warn("[SolicitudController] hayTecnicoConEspecialidad: " + e.getMessage());
         }
         return false;
     }
@@ -321,7 +323,7 @@ public class SolicitudController {
                 c.setApellidos(rs.getString(3));
                 lista.add(c);
             }
-        } catch (SQLException e) { System.err.println(e.getMessage()); }
+        } catch (SQLException e) { Log.warn(e.getMessage()); }
         cmbCliente.setItems(FXCollections.observableArrayList(lista));
     }
 
@@ -331,7 +333,7 @@ public class SolicitudController {
                 .prepareStatement("SELECT id_tipo_servicio, nombre FROM tb_tipo_servicio WHERE estado=1 ORDER BY nombre");
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) lista.add(new TipoServicio(rs.getInt(1), rs.getString(2)));
-        } catch (SQLException e) { System.err.println(e.getMessage()); }
+        } catch (SQLException e) { Log.warn(e.getMessage()); }
         cmbTipo.setItems(FXCollections.observableArrayList(lista));
     }
 
@@ -471,7 +473,7 @@ public class SolicitudController {
             ResultSet rs = ps.executeQuery();
             if (rs.next()) return rs.getInt(1) > 0;
         } catch (SQLException e) {
-            System.err.println("[SolicitudController] existeSolicitudDuplicada: " + e.getMessage());
+            Log.warn("[SolicitudController] existeSolicitudDuplicada: " + e.getMessage());
         }
         return false;
     }
@@ -522,6 +524,8 @@ public class SolicitudController {
             Integer.parseInt(txtHoraMM.getText().trim()));
     }
 
+
+
     private String validarCompleto() {
         if (cmbCliente.getValue() == null)   return "Selecciona el cliente.";
         if (cmbTipo.getValue() == null)      return "Selecciona el tipo de servicio.";
@@ -529,18 +533,35 @@ public class SolicitudController {
         LocalDate fecha = dpFechaSolicitud.getValue();
         if (fecha == null)                              return "Selecciona la fecha del servicio.";
         if (fecha.isBefore(LocalDate.now()))            return "La fecha no puede ser anterior a hoy.";
-        if (fecha.isAfter(LocalDate.now().plusMonths(2))) return "La fecha no puede ser más de 2 meses adelante.";
+        if (fecha.isAfter(LocalDate.now().plusMonths(2))) return "La fecha no puede ser mas de 2 meses adelante.";
         if (txtHoraHH != null) {
             String hh = txtHoraHH.getText().trim(), mm = txtHoraMM.getText().trim();
-            if (hh.isEmpty() || mm.isEmpty()) return "Ingresa la hora de atención.";
-            int total = Integer.parseInt(hh) * 60 + Integer.parseInt(mm);
-            if (total < 480)  return "La hora no puede ser antes de las 08:00.";
-            if (total > 1020) return "La hora no puede ser después de las 17:00.";
+            String errorHora = validarHorario(hh, mm);
+            if (errorHora != null) return errorHora;
         }
-        // Validar especialidad disponible al guardar
         int idEsp = dao.obtenerEspecialidadDeTipo(cmbTipo.getValue().getIdTipoServicio());
         if (idEsp > 0 && !hayTecnicoConEspecialidad(idEsp))
-            return "❌ No hay técnicos activos con la especialidad requerida para este servicio.";
+            return "No hay tecnicos activos con la especialidad requerida para este servicio.";
+        return null;
+    }
+
+    /**
+     * Valida que la hora ingresada este dentro del rango permitido 08:00-17:00 (RF15-CP03).
+     * Extraido como metodo estatico puro para poder probarse sin instanciar componentes JavaFX.
+     * @param hh  cadena con la hora (ej. "08")
+     * @param mm  cadena con los minutos (ej. "00")
+     * @return null si la hora es valida, o un mensaje de error si no lo es.
+     */
+    public static String validarHorario(String hh, String mm) {
+        if (hh == null || hh.isEmpty() || mm == null || mm.isEmpty())
+            return "Ingresa la hora de atencion.";
+        try {
+            int total = Integer.parseInt(hh) * 60 + Integer.parseInt(mm);
+            if (total < 480)  return "La hora no puede ser antes de las 08:00.";
+            if (total > 1020) return "La hora no puede ser despues de las 17:00.";
+        } catch (NumberFormatException e) {
+            return "La hora debe contener solo numeros.";
+        }
         return null;
     }
 

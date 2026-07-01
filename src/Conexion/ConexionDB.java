@@ -1,5 +1,7 @@
 package Conexion;
 
+import Util.Log;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -35,9 +37,9 @@ public class ConexionDB {
             conexion = DriverManager.getConnection(URL, USUARIO, PASSWORD);
             System.out.println("[DB] Conexion establecida con " + BASE);
         } catch (ClassNotFoundException e) {
-            System.err.println("[DB] Driver MySQL no encontrado: " + e.getMessage());
+            Log.warn("[DB] Driver MySQL no encontrado: " + e.getMessage());
         } catch (SQLException e) {
-            System.err.println("[DB] Error al conectar: " + e.getMessage());
+            Log.warn("[DB] Error al conectar: " + e.getMessage());
         }
     }
 
@@ -48,7 +50,7 @@ public class ConexionDB {
                 conectar();
             }
         } catch (SQLException e) {
-            System.err.println("[DB] Error al verificar conexión: " + e.getMessage());
+            Log.warn("[DB] Error al verificar conexión: " + e.getMessage());
         }
         return conexion;
     }
@@ -60,7 +62,7 @@ public class ConexionDB {
                 System.out.println("[DB] Conexion cerrada.");
             }
         } catch (SQLException e) {
-            System.err.println("[DB] Error al cerrar conexión: " + e.getMessage());
+            Log.warn("[DB] Error al cerrar conexión: " + e.getMessage());
         }
     }
 }

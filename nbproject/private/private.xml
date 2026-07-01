@@ -3,31 +3,84 @@
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/test/DAO/RF34_CambiarPasswordCuentaTest.java</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/test/DAO/RF45_ActivarDesactivarCuentaTest.java</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/test/Controlador/RF01_IniciarSesionTest.java</file>
             <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/src/Vista/HistorialView.fxml</file>
-            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/src/Modelo/Solicitud.java</file>
-            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/src/Controlador/HistorialController.java</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/test/DAO/RF22_AsignacionAutomaticaTest.java</file>
             <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/src/Vista/styles.css</file>
             <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/src/Vista/TecnicoView.fxml</file>
-            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/src/Controlador/SolicitudController.java</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/test/DAO/RF06_EditarClienteTest.java</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/test/DAO/RF23_AsignacionManualTest.java</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/test/DAO/RF43_CrearCuentaGestorTest.java</file>
             <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/src/Main/Main.java</file>
             <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/src/Controlador/TecnicoController.java</file>
-            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/src/Controlador/AdminReportesController.java</file>
-            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/src/Controlador/ReporteController.java</file>
-            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/src/Vista/AdminReportesView.fxml</file>
-            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/src/Controlador/AsignacionController.java</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/test/DAO/RF12_BuscarTecnicoEspecialidadTest.java</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/test/DAO/RF36_GestionarHorarioTecnicoTest.java</file>
             <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/src/Modelo/Cliente.java</file>
-            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/src/Vista/SolicitudView.fxml</file>
-            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/src/Vista/AdminCuentasView.fxml</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/test/DAO/RF05_EliminarClienteTest.java</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/test/DAO/RF13_FiltrarTecnicoZonaTest.java</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/test/DAO/RF33_GestionarCuentaTest.java</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/test/DAO/RF39_EliminarTecnicoTest.java</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/test/DAO/RF40_DashboardTest.java</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/test/DAO/RF46_ListarCuentasGestoresTest.java</file>
             <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/src/Vista/MenuPrincipalView.fxml</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/src/DAO/SolicitudDAO.java</file>
             <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/src/DAO/ClienteDAO.java</file>
             <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/src/Vista/ReporteView.fxml</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/test/Controlador/RF02_CerrarSesionTest.java</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/test/DAO/RF27_ReporteClientesTest.java</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/build.xml</file>
             <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/src/Controlador/Controller.java</file>
-            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/src/Vista/FX.fxml</file>
-            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/src/Vista/ClienteView.fxml</file>
-            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/src/Vista/LoginView.fxml</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/test/DAO/RF04_RegistrarClienteTest.java</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/test/DAO/RF07_BuscarClienteTest.java</file>
             <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/src/Modelo/Especialidad.java</file>
             <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/src/Controlador/ClienteController.java</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/test/DAO/RF42_AlertasServiciosDemoradosTest.java</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/test/DAO/RF49_GenerarReporteSolicitudesAdminTest.java</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/src/Modelo/Solicitud.java</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/src/Controlador/HistorialController.java</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/test/DAO/RF24_ReasignacionTecnicoTest.java</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/test/DAO/RF11_ListarTecnicoTest.java</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/src/Controlador/SolicitudController.java</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/test/DAO/RF50_ExportarReportePdfAdminTest.java</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/test/DAO/RF19_ConsultarPorRangoFechasTest.java</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/src/Controlador/AdminReportesController.java</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/src/Controlador/ReporteController.java</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/test/DAO/RF47_GenerarReporteClientesAdminTest.java</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/src/Vista/AdminReportesView.fxml</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/test/DAO/RF17_CancelarSolicitudTest.java</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/test/Controlador/RF21_PrioridadAsignacionTest.java</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/src/Controlador/AsignacionController.java</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/test/DAO/RF41_ConsultarHistorialTest.java</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/test/DAO/RF38_AlertasPendientesHoyTest.java</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/src/Vista/SolicitudView.fxml</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/test/DAO/RF16_EditarSolicitudTest.java</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/test/DAO/RF35_ListarCuentasTest.java</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/test/DAO/RF37_AutoTerminarTest.java</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/test/DAO/RF21_PrioridadAsignacionTest.java</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/test/DAO/RF08_ListarClienteTest.java</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/test/DAO/RF18_ListarSolicitudesTest.java</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/test/DAO/RF32_AsignacionMasivaTest.java</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/test/DAO/RF03_RecuperarPasswordTest.java</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/src/Vista/AdminCuentasView.fxml</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/test/DAO/RF14_ConsultarDisponibilidadTecnicoTest.java</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/test/DAO/RF48_GenerarReporteTecnicosAdminTest.java</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/test/DAO/RF28_ReporteTecnicosTest.java</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/test/DAO/RF30_ExportarPdfTest.java</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/test/DAO/RF44_EditarCuentaGestorTest.java</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/test/DAO/RF15_RegistrarSolicitudTest.java</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/src/Vista/FX.fxml</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/src/Conexion/ConexionDB.java</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/test/DAO/RF20_ConsultarPorFechaTest.java</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/test/DAO/RF26_ListarAsignacionesTest.java</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/src/DAO/UsuarioDAO.java</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/src/Vista/ClienteView.fxml</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/src/Vista/LoginView.fxml</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/test/DAO/RF25_CambioEstadoAsignacionTest.java</file>
             <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/src/Vista/AsignacionView.fxml</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/test/DAO/RF09_HistorialPorClienteTest.java</file>
+            <file>file:/C:/Users/gerso/Documents/NetBeansProjects/Sistema%20de%20Asignacion/test/DAO/RF29_ReporteSolicitudesTest.java</file>
         </group>
     </open-files>
 </project-private>

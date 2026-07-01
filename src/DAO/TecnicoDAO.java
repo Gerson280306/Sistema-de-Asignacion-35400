@@ -1,5 +1,7 @@
 package DAO;
 
+import Util.Log;
+
 import Conexion.ConexionDB;
 import Modelo.Tecnico;
 import java.sql.*;
@@ -39,7 +41,7 @@ public class TecnicoDAO {
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) lista.add(mapear(rs));
         } catch (SQLException e) {
-            System.err.println("[TecnicoDAO] listarConFiltro: " + e.getMessage());
+            Log.warn("[TecnicoDAO] listarConFiltro: " + e.getMessage());
         }
         return lista;
     }
@@ -58,7 +60,7 @@ public class TecnicoDAO {
             ResultSet rs = ps.executeQuery();
             while (rs.next()) lista.add(mapear(rs));
         } catch (SQLException e) {
-            System.err.println("[TecnicoDAO] buscar: " + e.getMessage());
+            Log.warn("[TecnicoDAO] buscar: " + e.getMessage());
         }
         return lista;
     }
@@ -77,7 +79,7 @@ public class TecnicoDAO {
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) lista.add(mapear(rs));
         } catch (SQLException e) {
-            System.err.println("[TecnicoDAO] filtrar: " + e.getMessage());
+            Log.warn("[TecnicoDAO] filtrar: " + e.getMessage());
         }
         return lista;
     }
@@ -102,7 +104,7 @@ public class TecnicoDAO {
             ps.setInt(10, t.getEstado());
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
-            System.err.println("[TecnicoDAO] guardar: " + e.getMessage());
+            Log.warn("[TecnicoDAO] guardar: " + e.getMessage());
             return false;
         }
     }
@@ -126,7 +128,7 @@ public class TecnicoDAO {
             ps.setInt(11, t.getIdTecnico());
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
-            System.err.println("[TecnicoDAO] actualizar: " + e.getMessage());
+            Log.warn("[TecnicoDAO] actualizar: " + e.getMessage());
             return false;
         }
     }
@@ -137,7 +139,7 @@ public class TecnicoDAO {
             ps.setInt(1, id);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
-            System.err.println("[TecnicoDAO] eliminar: " + e.getMessage());
+            Log.warn("[TecnicoDAO] eliminar: " + e.getMessage());
             return false;
         }
     }
@@ -180,7 +182,7 @@ public class TecnicoDAO {
             }
             return true;
         } catch (SQLException e) {
-            System.err.println("[TecnicoDAO] guardarHorario: " + e.getMessage());
+            Log.warn("[TecnicoDAO] guardarHorario: " + e.getMessage());
             return false;
         }
     }
@@ -197,7 +199,7 @@ public class TecnicoDAO {
                 if (dia >= 1 && dia <= 7) dias[dia - 1] = true;
             }
         } catch (SQLException e) {
-            System.err.println("[TecnicoDAO] cargarDiasHorario: " + e.getMessage());
+            Log.warn("[TecnicoDAO] cargarDiasHorario: " + e.getMessage());
         }
         // Si el técnico no tiene horario configurado, asumimos que trabaja todos los días
         boolean alguno = false;
@@ -216,7 +218,7 @@ public class TecnicoDAO {
                 return new String[]{ rs.getString("hora_inicio"), rs.getString("hora_fin") };
             }
         } catch (SQLException e) {
-            System.err.println("[TecnicoDAO] cargarHorasHorario: " + e.getMessage());
+            Log.warn("[TecnicoDAO] cargarHorasHorario: " + e.getMessage());
         }
         return new String[]{"08:00", "17:00"};
     }
@@ -246,7 +248,7 @@ public class TecnicoDAO {
                     .add(new LocalTime[]{ini, fin});
             }
         } catch (SQLException e) {
-            System.err.println("[TecnicoDAO] obtenerOcupacionPorFecha: " + e.getMessage());
+            Log.warn("[TecnicoDAO] obtenerOcupacionPorFecha: " + e.getMessage());
         }
         return mapa;
     }
@@ -266,7 +268,7 @@ public class TecnicoDAO {
              ResultSet rs = ps.executeQuery()) {
             if (rs.next()) return rs.getInt(1);
         } catch (SQLException e) {
-            System.err.println("[TecnicoDAO] contarLibresHoy: " + e.getMessage());
+            Log.warn("[TecnicoDAO] contarLibresHoy: " + e.getMessage());
         }
         return 0;
     }

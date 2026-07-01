@@ -1,5 +1,7 @@
 package Controlador;
 
+import Util.Log;
+
 import Conexion.ConexionDB;
 import Modelo.Usuario;
 import com.itextpdf.kernel.pdf.*;
@@ -243,7 +245,7 @@ public class AdminReportesController implements ControladorConUsuario {
             tblReporte.setItems(datos);
             lblContador.setText(datos.size() + " registros");
         } catch (SQLException e) {
-            System.err.println("[AdminReportesController.cargarTabla] " + e.getMessage());
+            Log.warn("[AdminReportesController.cargarTabla] " + e.getMessage());
             lblContador.setText("Error: " + e.getMessage());
         }
     }
@@ -259,7 +261,7 @@ public class AdminReportesController implements ControladorConUsuario {
             tblReporte.setItems(datos);
             lblContador.setText(datos.size() + " registros");
         } catch (SQLException e) {
-            System.err.println("[AdminReportesController.cargarTabla] " + e.getMessage());
+            Log.warn("[AdminReportesController.cargarTabla] " + e.getMessage());
             lblContador.setText("Error: " + e.getMessage());
         }
     }
@@ -465,7 +467,7 @@ public class AdminReportesController implements ControladorConUsuario {
             new Alert(Alert.AlertType.ERROR,
                 "Error al generar PDF:\n" + e.getMessage())
                 .showAndWait();
-            e.printStackTrace();
+            Log.error(e);
         }
     }
 

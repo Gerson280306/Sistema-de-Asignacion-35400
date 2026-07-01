@@ -1,5 +1,7 @@
 package Controlador;
 
+import Util.Log;
+
 import DAO.ClienteDAO;
 import Modelo.Cliente;
 import Modelo.Zona;
@@ -101,7 +103,7 @@ public class ClienteController {
                 .prepareStatement("SELECT id_zona, nombre FROM tb_zona WHERE estado=1 ORDER BY nombre");
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) lista.add(new Zona(rs.getInt(1), rs.getString(2)));
-        } catch (SQLException e) { System.err.println(e.getMessage()); }
+        } catch (SQLException e) { Log.warn(e.getMessage()); }
         cmbDistrito.setItems(FXCollections.observableArrayList(lista));
     }
 
@@ -193,6 +195,12 @@ public class ClienteController {
     @FXML public void eliminarCliente() {
         if (clienteSeleccionado == null) return;
         boolean estaActivo = clienteSeleccionado.getEstado() == 1;
+
+        if (estaActivo && dao.tieneSolicitudesActivas(clienteSeleccionado.getIdCliente())) {
+            mostrarMensaje("No se puede eliminar: cliente tiene solicitudes activas", false);
+            return;
+        }
+
         Alert a = new Alert(Alert.AlertType.CONFIRMATION,
             "¿Deseas " + (estaActivo ? "desactivar" : "activar")
             + " a " + clienteSeleccionado.getNombreCompleto() + "?",
@@ -234,33 +242,41 @@ public class ClienteController {
     }
 
     private String validarCompleto() {
-        String dni = txtDni.getText().trim();
-        if (dni.isEmpty()) return "El DNI/RUC es obligatorio.";
+        return validarFormato(
+            txtDni.getText().trim(), txtNombres.getText().trim(), txtApellidos.getText().trim(),
+            txtTelefono.getText().trim(), txtDireccion.getText().trim(), txtEmail.getText().trim()
+        );
+    }
+
+    /**
+     * Valida formato de los campos del formulario de cliente (RF04-CP03 / RF06-CP03).
+     * Extraído como método estático puro (sin tocar componentes de JavaFX) para poder
+     * probarse con JUnit de forma directa.
+     * @return null si todo es válido, o el mensaje de error específico del primer campo inválido.
+     */
+    public static String validarFormato(String dni, String nombres, String apellidos,
+                                         String telefono, String direccion, String email) {
+        if (dni == null || dni.isEmpty()) return "El DNI/RUC es obligatorio.";
         if (!dni.matches("\\d{8}") && !dni.matches("\\d{11}"))
             return "DNI: 8 dígitos, RUC: 11 dígitos.";
 
-        String nombres = txtNombres.getText().trim();
-        if (nombres.isEmpty()) return "Los nombres son obligatorios.";
+        if (nombres == null || nombres.isEmpty()) return "Los nombres son obligatorios.";
         if (nombres.length() < 3) return "Los nombres deben tener al menos 3 caracteres.";
         if (!nombres.matches("[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+"))
             return "Los nombres solo deben contener letras.";
 
-        String apellidos = txtApellidos.getText().trim();
-        if (apellidos.isEmpty()) return "Los apellidos son obligatorios.";
+        if (apellidos == null || apellidos.isEmpty()) return "Los apellidos son obligatorios.";
         if (apellidos.length() < 3) return "Los apellidos deben tener al menos 3 caracteres.";
         if (!apellidos.matches("[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+"))
             return "Los apellidos solo deben contener letras.";
 
-        String tel = txtTelefono.getText().trim();
-        if (!tel.isEmpty() && !tel.matches("\\d{9}"))
+        if (telefono != null && !telefono.isEmpty() && !telefono.matches("\\d{9}"))
             return "El teléfono debe tener exactamente 9 dígitos.";
 
-        String dir = txtDireccion.getText().trim();
-        if (!dir.isEmpty() && dir.length() < 5)
+        if (direccion != null && !direccion.isEmpty() && direccion.length() < 5)
             return "La dirección debe tener al menos 5 caracteres.";
 
-        String email = txtEmail.getText().trim();
-        if (!email.isEmpty() && !email.matches("^[\\w._%+\\-]+@gmail\\.com$"))
+        if (email != null && !email.isEmpty() && !email.matches("^[\\w._%+\\-]+@gmail\\.com$"))
             return "El correo debe terminar en @gmail.com.";
 
         return null;

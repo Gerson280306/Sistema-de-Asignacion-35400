@@ -1,5 +1,7 @@
 package DAO;
 
+import Util.Log;
+
 import Conexion.ConexionDB;
 import Modelo.Asignacion;
 import java.sql.*;
@@ -33,7 +35,7 @@ public class AsignacionDAO {
             ps.setString(6, a.getObservaciones());
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
-            System.err.println("[AsignacionDAO] guardar: " + e.getMessage());
+            Log.warn("[AsignacionDAO] guardar: " + e.getMessage());
             return false;
         }
     }
@@ -59,7 +61,7 @@ public class AsignacionDAO {
             ps.setInt(3, idAsignacion);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
-            System.err.println("[AsignacionDAO] cambiarEstado: " + e.getMessage());
+            Log.warn("[AsignacionDAO] cambiarEstado: " + e.getMessage());
             return false;
         }
     }
@@ -74,7 +76,7 @@ public class AsignacionDAO {
             ResultSet rs = ps.executeQuery();
             if (rs.next()) return rs.getInt(1);
         } catch (SQLException e) {
-            System.err.println("[AsignacionDAO] buscarIdPorSolicitud: " + e.getMessage());
+            Log.warn("[AsignacionDAO] buscarIdPorSolicitud: " + e.getMessage());
         }
         return -1;
     }

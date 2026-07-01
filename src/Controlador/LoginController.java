@@ -1,6 +1,9 @@
 package Controlador;
 
+import Util.Log;
+
 import DAO.UsuarioDAO;
+import Modelo.ResultadoLogin;
 import Modelo.Usuario;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -31,17 +34,34 @@ public class LoginController {
         String username = txtUsuario.getText().trim();
         String password = txtPassword.getText().trim();
 
-        if (username.isEmpty() || password.isEmpty()) {
+        if (camposVacios(username, password)) {
             mostrarError("Por favor ingresa usuario y contraseña.");
             return;
         }
 
-        Usuario usuario = usuarioDAO.autenticar(username, password);
+        ResultadoLogin resultado = usuarioDAO.autenticarDetallado(username, password);
 
-        if (usuario == null) {
-            mostrarError("Usuario o contraseña incorrectos.");
-            return;
+        switch (resultado.getEstado()) {
+            case CUENTA_BLOQUEADA:
+                mostrarError("Cuenta bloqueada por intentos fallidos. Un administrador debe reactivarla para que puedas volver a ingresar.");
+                return;
+            case CREDENCIALES_INVALIDAS:
+                if (resultado.getIntentosRestantes() > 0) {
+                    mostrarError("Usuario o contraseña incorrectos. Advertencia: te queda"
+                            + (resultado.getIntentosRestantes() == 1 ? "" : "n") + " "
+                            + resultado.getIntentosRestantes()
+                            + (resultado.getIntentosRestantes() == 1 ? " intento" : " intentos")
+                            + " antes de que la cuenta se bloquee.");
+                } else {
+                    mostrarError("Usuario o contraseña incorrectos.");
+                }
+                return;
+            case OK:
+            default:
+                break;
         }
+
+        Usuario usuario = resultado.getUsuario();
 
         // Redirigir según rol
         if ("ADMIN".equals(usuario.getRol())) {
@@ -49,6 +69,14 @@ public class LoginController {
         } else {
             abrirVista("/Vista/MenuPrincipalView.fxml", "Sistema de Asignación", usuario);
         }
+    }
+
+    /**
+     * Valida si usuario y/o contraseña están vacíos (RF01-CP02).
+     * Extraído como método puro para poder probarse sin instanciar componentes de JavaFX.
+     */
+    public static boolean camposVacios(String username, String password) {
+        return username == null || username.isEmpty() || password == null || password.isEmpty();
     }
 
     private void abrirVista(String fxmlPath, String titulo, Usuario usuario) {
@@ -68,7 +96,7 @@ public class LoginController {
             stage.setMaximized(true);
         } catch (Exception e) {
             mostrarError("Error al cargar el sistema: " + e.getMessage());
-            e.printStackTrace();
+            Log.error(e);
         }
     }
 

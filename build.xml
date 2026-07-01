@@ -10,6 +10,32 @@
 <project name="Sistema_de_Asignacion" default="default" basedir=".">
     <description>Builds, tests, and runs the project Sistema de Asignacion.</description>
     <import file="nbproject/build-impl.xml"/>
+
+    <target name="test5" depends="compile-test"
+            description="Ejecuta todos los tests y muestra primero el resumen RF01..RF50: PASSED/FAILED, y luego el detalle por CP.">
+        <java classname="Runner.RunAllTests" fork="true" failonerror="false">
+            <classpath>
+                <path path="${javac.test.classpath}"/>
+                <path path="${build.test.classes.dir}"/>
+            </classpath>
+        </java>
+    </target>
+
+    <target name="test-tree" depends="compile-test"
+            description="Ejecuta los tests JUnit 5 con el Console Launcher original (arbol detallado en vivo, sin resumen RF).">
+        <java classname="org.junit.platform.console.ConsoleLauncher" fork="true" failonerror="false">
+            <classpath>
+                <path path="${javac.test.classpath}"/>
+                <path path="${build.test.classes.dir}"/>
+            </classpath>
+            <arg value="execute"/>
+            <arg value="--scan-classpath=${build.test.classes.dir}"/>
+            <arg value="--details=tree"/>
+        </java>
+    </target>
+
+    <target name="test-rf" depends="test5"
+            description="Alias de test5."/>
     <!--
 
     There exist several targets which are by default empty and which can be 
